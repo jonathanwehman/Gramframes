@@ -13,7 +13,7 @@ GT.targetButtons = {}  -- tank-target buttons (polled; target units fire no even
 local UNIT_EVENTS = {
     "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
     "UNIT_AURA", "UNIT_THREAT_SITUATION_UPDATE", "UNIT_CONNECTION", "UNIT_NAME_UPDATE",
-    "UNIT_FLAGS", "UNIT_PHASE", "INCOMING_RESURRECT_CHANGED",
+    "UNIT_FLAGS", "UNIT_PHASE", "INCOMING_RESURRECT_CHANGED", "UNIT_IN_RANGE_UPDATE",
 }
 
 -------------------------------------------------------------------------------
@@ -324,6 +324,8 @@ local function OnUnitEvent(self, event, unit)
         GT.UpdateAggro(self)
     elseif event == "UNIT_NAME_UPDATE" then
         GT.UpdateName(self); GT.UpdateColor(self)
+    elseif event == "UNIT_IN_RANGE_UPDATE" then
+        GT.UpdateRange(self) -- fires often in a moving group; only redo the fade
     else
         GT.UpdateAll(self)
     end
@@ -954,9 +956,19 @@ function GT.UpdateRange(b)
     if (Unseen(u) and true or nil) ~= b.unseen then GT.UpdateHealth(b) end
     if IsTrue(Call(UnitIsUnit, u, "player")) then b:SetAlpha(1) return end
     if b.kind == "target" then b:SetAlpha(1) return end
-    local inRange, checked = Call(UnitInRange, u)
-    if Readable(inRange) and Readable(checked) then
-        b:SetAlpha((checked and not inRange) and oor or 1)
+    -- offline isn't "out of range": steady, slightly dimmed
+    local connected = Call(UnitIsConnected, u)
+    if Readable(connected) and connected == false then b:SetAlpha(0.8) return end
+    -- another phase / can't be seen at all: definitely out of range
+    local phase = Call(UnitPhaseReason, u)
+    if Readable(phase) and phase ~= nil then b:SetAlpha(oor) return end
+    local vis = Call(UnitIsVisible, u)
+    if Readable(vis) and vis == false then b:SetAlpha(oor) return end
+    -- the ~40yd check. Go by "in range" alone: its second value only says whether the game
+    -- could check, and treating "couldn't check" as in-range made far-away players look close.
+    local inRange = Call(UnitInRange, u)
+    if Readable(inRange) then
+        b:SetAlpha(inRange and 1 or oor)
     elseif b.SetAlphaFromBoolean and IsSecret(inRange) then
         if not pcall(b.SetAlphaFromBoolean, b, inRange, 1, oor) then b:SetAlpha(1) end
     else

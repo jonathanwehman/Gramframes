@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.1.4 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.1.5 (beta)** · Interface 16001 · type `/gf` in game
 
 ## Install
 
