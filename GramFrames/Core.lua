@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.1.1"
+GT.version = "2.1.2"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -184,6 +184,7 @@ end
 local function PartyDefaults()
     local L = LayoutDefaults(-480, -40) -- party sits somewhere other than raid by default
     L.look, L.buffs, L.debuffs = Copy(VIEW_DEFAULTS.look), Copy(VIEW_DEFAULTS.buffs), Copy(VIEW_DEFAULTS.debuffs)
+    L.showPlayer = false -- party frames show your groupmates, not you
     for k, v in pairs(PARTY_STYLE) do
         if type(v) == "table" then for k2, v2 in pairs(v) do L[k][k2] = v2 end else L[k] = v end
     end
@@ -419,6 +420,11 @@ ev:SetScript("OnEvent", function(_, event, ...)
                 if type(v) == "table" then for k2, v2 in pairs(v) do P[k][k2] = v2 end else P[k] = v end
             end
             GT.db.general.partyStyle2 = true
+        end
+        -- one time: party frames hide your own frame (turn "Show Me" back on to see it)
+        if not GT.db.general.hideSelf1 then
+            GT.db.layouts.party.showPlayer = false
+            GT.db.general.hideSelf1 = true
         end
         -- one time: party and raid used to share a spot; split them apart
         if not GT.db.general.splitPos then

@@ -441,6 +441,9 @@ function GT.RefreshTestMode()
     holder:SetPoint("TOPLEFT", GT.movers.main, "BOTTOMLEFT", 0, -2)
     holder:SetSize(1, 1)
     local n = SIZES[key] or 5
+    -- party with "Show Me" off: preview the other four, without you
+    local skip = (key == "party" and L.showPlayer == false) and 1 or 0
+    n = n - skip
     local cols = L.direction == "COLUMNS"
     for i = 1, 40 do
         local b = fakes[i]
@@ -465,7 +468,7 @@ function GT.RefreshTestMode()
                 b:SetPoint("TOPLEFT", holder, "TOPLEFT", slot * (L.width + L.spacing), -group * (L.height + L.groupSpacing))
             end
             b:Show()
-            FillFake(b, i)
+            FillFake(b, i + skip)
         elseif b then
             b:Hide()
         end

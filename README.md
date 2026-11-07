@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.1.1 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.1.2 (beta)** · Interface 16001 · type `/gf` in game
 
 ## Install
 
@@ -18,7 +18,7 @@ Dark, clean raid and party frames for **WoW Forever**, built from scratch for ta
 ### Party and raid, separately
 - Party Frames and Raid Frames each have their own tab, spot on screen, size, colors, buffs and debuffs
 - 10, 20 and 40-man each get their own setup and switch automatically
-- Party: stacked or side by side, show or hide yourself, hide when solo
+- Party: your 4 groupmates (turn on "Show Me" to add yourself), stacked or side by side, hide when solo
 - Raid: groups as columns (or rows), or one combined grid
 
 <p align="center"><img src="images/gramframes-party-card.png" width="600" alt="Party frames"></p>
