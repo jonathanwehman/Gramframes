@@ -8,7 +8,7 @@ Dark, clean raid and party frames for **WoW Forever**, built for tanks and heale
 
 ## Install
 
-1. Download **GramFrames.zip** from [Releases](../../releases/latest).
+1. **[Download GramFrames.zip](https://github.com/jonathanwehman/gramframes/raw/main/GramFrames.zip)**
 2. Unzip it into `World of Warcraft\_forever_\Interface\AddOns` so you get an `AddOns\GramFrames` folder.
 3. Turn off other raid frame addons (Cell, etc.).
 4. Log in, type `/gf`, turn on Test Mode, drag the frames where you want, and lock them.
