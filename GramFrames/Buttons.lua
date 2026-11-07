@@ -385,9 +385,30 @@ function GT.UpdateHealthText(b)
     end
 end
 
+-- the game can't see a groupmate who is far away / another zone: health reads 0.
+-- Show them as a full bar in your normal color (faded by range) instead of all-red.
+local function Unseen(u)
+    local vis = Call(UnitIsVisible, u)
+    if Readable(vis) and vis == false then return true end
+    local m = Num(Call(UnitHealthMax, u))
+    return m ~= nil and m <= 0
+end
+
 function GT.UpdateHealth(b)
     local u = b.unit
     if not u then return end
+    local unseen = Unseen(u) and not IsTrue(Call(UnitIsDeadOrGhost, u))
+    if unseen then
+        b.unseen = true
+        b.health:SetMinMaxValues(0, 1); b.health:SetValue(1)
+        GT.UpdateStatus(b)
+        b.htext:Hide()
+        if GT.Look().healthColor == "GRADIENT" then GT.UpdateColor(b) end
+        return
+    elseif b.unseen then
+        b.unseen = nil
+        GT.UpdateMaxHealth(b)
+    end
     local h = Call(UnitHealth, u)
     if not rawequal(h, nil) then b.health:SetValue(h) end
     GT.UpdateStatus(b)
@@ -489,7 +510,9 @@ function GT.PaintBar(b, r, g, bl, pct, unit)
         br, bg, bb, lr, lg, lb = r * 0.28, g * 0.28, bl * 0.28, r * 0.8, g * 0.8, bl * 0.8
     elseif mode == "GRADIENT" then
         lr, lg, lb = 0.12, 0.12, 0.12
-        if pct then
+        if b.unseen then
+            br, bg, bb = GT.GradientRGB(1) -- can't see their health: show them as healthy
+        elseif pct then
             br, bg, bb = GT.GradientRGB(pct)
         elseif unit and UnitHealthPercent and GradientCurve() then
             -- health is hidden: let the client turn health % into a color
@@ -911,6 +934,7 @@ function GT.UpdateRange(b)
     local u = b.unit
     if not u or b.kind == "fake" then return end
     local oor = GT.Look().rangeAlpha
+    if (Unseen(u) and true or nil) ~= b.unseen then GT.UpdateHealth(b) end
     if IsTrue(Call(UnitIsUnit, u, "player")) then b:SetAlpha(1) return end
     if b.kind == "target" then b:SetAlpha(1) return end
     local inRange, checked = Call(UnitInRange, u)
