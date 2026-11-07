@@ -121,7 +121,7 @@ local function ConfigureGroups(L)
         h:SetAttribute("showPlayer", i == 1 and L.showPlayer ~= false)
         h:SetAttribute("showSolo", i == 1 and L.showSolo and not GT.db.general.hideSolo)
         RefreshChildren(h, L.width, L.height)
-        -- fixed slots: group N always sits in column (or row) N, like Cell
+        -- fixed slots: group N always sits in column (or row) N
         h:ClearAllPoints()
         if cols then
             h:SetPoint("TOPLEFT", GT.movers.main, "BOTTOMLEFT", (i - 1) * (L.width + L.groupSpacing), -2)

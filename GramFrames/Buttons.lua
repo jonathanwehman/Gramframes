@@ -203,7 +203,7 @@ function GT.ApplyLook(b)
     local look, deb = GT.Look(), GT.Debuffs()
     local isTarget = b.kind == "target"
 
-    b.bg:SetVertexColor(0, 0, 0, look.bgAlpha) -- 1px black edge around the bar (ElvUI/Cell look)
+    b.bg:SetVertexColor(0, 0, 0, look.bgAlpha) -- 1px black edge around the bar
     b.frameBorder:Hide()
 
     local showPower = not isTarget and look.powerBar ~= "NONE"

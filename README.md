@@ -2,15 +2,15 @@
 
 # Gram Frames
 
-Dark, clean raid and party frames for **WoW Forever**, built for tanks and healers who want Cell-style control without the clutter.
+Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.1.0 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.1.1 (beta)** · Interface 16001 · type `/gf` in game
 
 ## Install
 
 1. **[Download GramFrames.zip](https://github.com/jonathanwehman/gramframes/raw/main/GramFrames.zip)**
 2. Unzip it into `World of Warcraft\_forever_\Interface\AddOns` so you get an `AddOns\GramFrames` folder.
-3. Turn off other raid frame addons (Cell, etc.).
+3. Turn off any other raid frame addon you use.
 4. Log in, type `/gf`, turn on Test Mode, drag the frames where you want, and lock them.
 
 ## Features
@@ -70,5 +70,9 @@ Gram Frames uses the **Expressway** font if you already have it installed (for e
 ## Bugs
 
 Install BugSack, then send the error (screenshot is fine) to Jon or open an issue here.
+
+## Thank you
+
+Big thanks to the authors of Cell, ElvUI, HealBot, EllesmereUI and every other frame addon that showed what great raid frames can be. Gram Frames is its own creation, made with a lot of respect for theirs.
 
 Made by Jon (Grahamaton).

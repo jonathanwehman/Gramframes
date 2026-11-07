@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: |cffff4fa3Gram|r Frames
-## Notes: Cell-style raid frames for WoW Forever: dark mode, click-casting with downranking, tank tools. /gf
+## Notes: Dark, clean raid & party frames for WoW Forever: click-casting with downranking, healer mana, tank tools. /gf
 ## Author: Jon (Grahamaton)
-## Version: 2.1.0
+## Version: 2.1.1
 ## SavedVariables: GramFramesDB
 ## IconTexture: Interface\AddOns\GramFrames\Media\icon
 ## AddonCompartmentFunc: GramFrames_OnAddonCompartmentClick

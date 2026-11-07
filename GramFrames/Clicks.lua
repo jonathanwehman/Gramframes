@@ -1,4 +1,4 @@
--- GramFrames: click-casting (Cell-style bindings) with spell rank / downrank support.
+-- GramFrames: click-casting bindings with spell rank / downrank support.
 -- A binding = modifier + mouse button -> action. Spells can be cast at max rank or
 -- any specific rank; ranks are resolved to that rank's own spell ID from the spellbook.
 local _, GT = ...
