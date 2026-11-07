@@ -1,0 +1,6 @@
+# Expressway is a paid font - never commit it
+*.ttf
+*.otf
+Expressway*
+.DS_Store
+Thumbs.db
