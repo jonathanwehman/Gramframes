@@ -1,0 +1,68 @@
+name: Upload to CurseForge
+
+# Run by hand from the Actions tab (or by Claude). Uploads the GramFrames.zip
+# that is on main to the Gram Frames CurseForge project.
+on:
+  workflow_dispatch:
+    inputs:
+      changelog:
+        description: "Changelog text (markdown)"
+        required: true
+        type: string
+      release_type:
+        description: "release, beta or alpha"
+        required: false
+        default: release
+        type: string
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_PROJECT_ID: ${{ vars.CF_PROJECT_ID }}
+      CF_HOST: https://wow.curseforge.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check settings
+        run: |
+          if [ -z "$CF_API_TOKEN" ]; then echo "::error::Missing secret CF_API_TOKEN"; exit 1; fi
+          if [ -z "$CF_PROJECT_ID" ]; then echo "::error::Missing variable CF_PROJECT_ID"; exit 1; fi
+          if unzip -l GramFrames.zip | grep -qiE '\.ttf|\.otf|expressway'; then echo "::error::Font file inside zip"; exit 1; fi
+
+      - name: Work out version and game version
+        id: meta
+        run: |
+          VERSION=$(grep -m1 '^## Version:' GramFrames/GramFrames.toc | sed 's/## Version:[[:space:]]*//' | tr -d '\r')
+          IFACE=$(grep -m1 '^## Interface:' GramFrames/GramFrames.toc | sed 's/## Interface:[[:space:]]*//' | tr -d '\r' | cut -d, -f1 | tr -d ' ')
+          # 16001 -> 1.60.1
+          GAMEVER=$(python3 -c "i=int('$IFACE'); print(f'{i//10000}.{(i//100)%100}.{i%100}')")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Addon $VERSION, Interface $IFACE, game version $GAMEVER"
+          curl -sS -f -H "X-Api-Token: $CF_API_TOKEN" "$CF_HOST/api/game/versions" > versions.json
+          IDS=$(jq -c --arg v "$GAMEVER" '[.[] | select(.name == $v) | .id]' versions.json)
+          echo "Matching CurseForge game version IDs for $GAMEVER: $IDS"
+          if [ "$IDS" = "[]" ]; then
+            echo "::error::CurseForge has no game version named $GAMEVER. Versions starting with 1.:"
+            jq -r '.[] | select(.name|startswith("1.")) | "\(.id) \(.name) type=\(.gameVersionTypeID)"' versions.json | sort -k2 -V | tail -40
+            exit 1
+          fi
+          echo "ids=$IDS" >> "$GITHUB_OUTPUT"
+
+      - name: Upload
+        env:
+          CHANGELOG: ${{ inputs.changelog }}
+          RELEASE: ${{ inputs.release_type }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          IDS: ${{ steps.meta.outputs.ids }}
+        run: |
+          jq -n --arg c "$CHANGELOG" --arg n "Gram Frames $VERSION" --arg r "$RELEASE" --argjson g "$IDS" \
+            '{changelog:$c, changelogType:"markdown", displayName:$n, releaseType:$r, gameVersions:$g}' > metadata.json
+          cat metadata.json
+          curl -sS -f -H "X-Api-Token: $CF_API_TOKEN" \
+            -F "metadata=<metadata.json;type=application/json" \
+            -F "file=@GramFrames.zip;filename=GramFrames-$VERSION.zip" \
+            "$CF_HOST/api/projects/$CF_PROJECT_ID/upload-file"
+          echo
+          echo "Uploaded Gram Frames $VERSION to CurseForge."
