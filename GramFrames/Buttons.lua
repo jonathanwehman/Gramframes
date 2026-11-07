@@ -376,9 +376,19 @@ local function Calc(b)
 end
 GT.HealthCalc = Calc
 
+-- Health as a percent (0-100): the game keeps this right for groupmates at any
+-- distance, where raw numbers can read 0. The bar is then a 0-100 bar.
+local function HealthPct(u)
+    if not (UnitHealthPercent and CurveConstants and CurveConstants.ScaleTo100) then return nil end
+    return Call(UnitHealthPercent, u, true, CurveConstants.ScaleTo100)
+end
+GT.HealthPct = HealthPct
+
 function GT.UpdateMaxHealth(b)
     local u = b.unit
     if not u then return end
+    if not rawequal(HealthPct(u), nil) then b.health:SetMinMaxValues(0, 100) b.pctBar = true return end
+    b.pctBar = nil
     local c = Calc(b)
     local max = c and Call(c.GetMaximumHealth, c)
     if rawequal(max, nil) then max = Call(UnitHealthMax, u) end
@@ -431,7 +441,7 @@ end
 function GT.UpdateHealth(b)
     local u = b.unit
     if not u then return end
-    local unseen = Unseen(u) and not IsTrue(Call(UnitIsDeadOrGhost, u))
+    local unseen = rawequal(HealthPct(u), nil) and Unseen(u) and not IsTrue(Call(UnitIsDeadOrGhost, u))
     if unseen then
         b.unseen = true
         b.health:SetMinMaxValues(0, 1); b.health:SetValue(1)
@@ -443,9 +453,16 @@ function GT.UpdateHealth(b)
         b.unseen = nil
         GT.UpdateMaxHealth(b)
     end
-    local c = Calc(b)
-    local h = c and Call(c.GetCurrentHealth, c)
-    if rawequal(h, nil) then h = Call(UnitHealth, u) end
+    local h
+    if b.pctBar then
+        h = HealthPct(u)
+        if rawequal(h, nil) then GT.UpdateMaxHealth(b) end
+    end
+    if not b.pctBar then
+        local c = Calc(b)
+        h = c and Call(c.GetCurrentHealth, c)
+        if rawequal(h, nil) then h = Call(UnitHealth, u) end
+    end
     if not rawequal(h, nil) then b.health:SetValue(h) end
     GT.UpdateStatus(b)
     GT.UpdateHealthText(b)
@@ -975,7 +992,7 @@ function GT.UpdateRange(b)
     local u = b.unit
     if not u or b.kind == "fake" then return end
     local oor = GT.Look().rangeAlpha
-    if (Unseen(u) and true or nil) ~= b.unseen then GT.UpdateHealth(b) end
+    if ((rawequal(HealthPct(u), nil) and Unseen(u)) and true or nil) ~= b.unseen then GT.UpdateHealth(b) end
     if IsTrue(Call(UnitIsUnit, u, "player")) then b:SetAlpha(1) return end
     if b.kind == "target" then b:SetAlpha(1) return end
     -- offline isn't "out of range": steady, slightly dimmed
