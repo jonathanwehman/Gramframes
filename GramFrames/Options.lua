@@ -119,6 +119,7 @@ local function FrameSections(kind)
         { title = "Icons", rows = {
             { "toggle", "Role Icons", "layout.look.roleIcon" },
             { "slider", "Role Icon Size", "layout.look.roleSize", 6, 20, 1 },
+            { "toggle", "Hide DPS Icon", "layout.look.hideDPSIcon" },
             { "toggle", "Leader Icon", "layout.look.leaderIcon" },
             { "toggle", "Raid Markers", "layout.look.raidIcon" },
             { "toggle", "Highlight My Target", "layout.look.targetHighlight" },

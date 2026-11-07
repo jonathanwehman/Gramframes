@@ -358,10 +358,30 @@ end
 -------------------------------------------------------------------------------
 -- Updates
 -------------------------------------------------------------------------------
+-- Health through Blizzard's heal-prediction calculator (12.x): it keeps reporting
+-- groupmates who are out of range, and its values can go straight into the bar
+-- even when they're hidden. Plain UnitHealth is the fallback.
+local function Calc(b)
+    if b.gfCalc == false then return nil end
+    if not b.gfCalc then
+        local ok, c = false, nil
+        if CreateUnitHealPredictionCalculator and UnitGetDetailedHealPrediction then
+            ok, c = pcall(CreateUnitHealPredictionCalculator)
+        end
+        b.gfCalc = (ok and c and c.GetCurrentHealth and c.GetMaximumHealth) and c or false
+        if not b.gfCalc then return nil end
+    end
+    if not pcall(UnitGetDetailedHealPrediction, b.unit, "player", b.gfCalc) then return nil end
+    return b.gfCalc
+end
+GT.HealthCalc = Calc
+
 function GT.UpdateMaxHealth(b)
     local u = b.unit
     if not u then return end
-    local max = Call(UnitHealthMax, u)
+    local c = Calc(b)
+    local max = c and Call(c.GetMaximumHealth, c)
+    if rawequal(max, nil) then max = Call(UnitHealthMax, u) end
     if not rawequal(max, nil) then b.health:SetMinMaxValues(0, max) end
 end
 
@@ -401,9 +421,9 @@ end
 
 -- the game can't see a groupmate who is far away / another zone: health reads 0.
 -- Show them as a full bar in your normal color (faded by range) instead of all-red.
+-- only when the game has no health number for them at all (max reads 0);
+-- out-of-range players keep their real health, just faded
 local function Unseen(u)
-    local vis = Call(UnitIsVisible, u)
-    if Readable(vis) and vis == false then return true end
     local m = Num(Call(UnitHealthMax, u))
     return m ~= nil and m <= 0
 end
@@ -423,7 +443,9 @@ function GT.UpdateHealth(b)
         b.unseen = nil
         GT.UpdateMaxHealth(b)
     end
-    local h = Call(UnitHealth, u)
+    local c = Calc(b)
+    local h = c and Call(c.GetCurrentHealth, c)
+    if rawequal(h, nil) then h = Call(UnitHealth, u) end
     if not rawequal(h, nil) then b.health:SetValue(h) end
     GT.UpdateStatus(b)
     GT.UpdateHealthText(b)
@@ -611,7 +633,7 @@ function GT.UpdateRole(b)
     if not GT.Look().roleIcon or b.kind == "target" then b.role:Hide() return end
     local role = b.fakeRole or GT.UnitRole(b.unit)
     local atlas = ROLE_ATLAS[role]
-    if atlas and role ~= "DAMAGER" then -- DPS icon is noise on a tank's frames
+    if atlas and not (role == "DAMAGER" and GT.Look().hideDPSIcon) then
         b.role:SetAtlas(atlas, false) -- keep OUR size, not the atlas's
         local rs = GT.Look().roleSize or 10
         b.role:SetSize(rs, rs)

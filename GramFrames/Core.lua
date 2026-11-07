@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.1.6"
+GT.version = "2.1.7"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -196,6 +196,7 @@ local VIEW_DEFAULTS = {
         powerHeight = 3,
         rangeAlpha = 0.40,
         roleIcon = true,
+        hideDPSIcon = false,        -- tanks/healers only, if you like it quieter
         roleSize = 10,
         leaderIcon = true,
         raidIcon = true,
