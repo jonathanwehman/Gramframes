@@ -976,6 +976,33 @@ function GT.UpdateRange(b)
     end
 end
 
+-- /gf debug: what the game actually reports for each frame (for bug reports)
+function GT.DebugFrames()
+    local function F(v)
+        if IsSecret(v) then return "|cffff9900secret|r" end
+        if type(v) == "number" then return string.format("%.2f", v) end
+        return tostring(v)
+    end
+    local n = 0
+    for b in pairs(GT.buttons) do
+        local u = b.unit
+        if u and b:IsVisible() then
+            n = n + 1
+            local inR, chk = Call(UnitInRange, u)
+            local fill = b.health:GetStatusBarTexture()
+            local tex = fill and fill.GetTexture and fill:GetTexture()
+            local r, g, bl = b.health:GetStatusBarColor()
+            local _, mx = b.health:GetMinMaxValues()
+            GT.Print(string.format("|cffffffff%s|r (%s) range=%s/%s phase=%s visible=%s online=%s dead=%s hp=%s/%s bar=%s/%s unseen=%s alpha=%s",
+                F(Call(UnitName, u)), u, F(inR), F(chk), F(Call(UnitPhaseReason, u)), F(Call(UnitIsVisible, u)),
+                F(Call(UnitIsConnected, u)), F(Call(UnitIsDeadOrGhost, u)), F(Call(UnitHealth, u)), F(Call(UnitHealthMax, u)),
+                F(b.health:GetValue()), F(mx), tostring(b.unseen), F(b:GetAlpha())))
+            GT.Print(string.format("   texture=%s color=%s,%s,%s look=%s", tostring(tex), F(r), F(g), F(bl), tostring(GT.Look().barTexture)))
+        end
+    end
+    if n == 0 then GT.Print("debug: no frames with a unit are showing") end
+end
+
 function GT.UpdateAll(b)
     if not b.unit then return end
     if b.kind == "target" then

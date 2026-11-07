@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.1.5 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.1.6 (beta)** · Interface 16001 · type `/gf` in game
 
 ## Install
 
@@ -59,6 +59,7 @@ Each frame only listens for updates about its own player, and one shared timer h
 | `/gf test` | Shows fake frames so you can set up without a group |
 | `/gf lock` | Locks or unlocks the frames (the pink drag bar hides when locked) |
 | `/gf minimap` | Shows or hides the minimap button |
+| `/gf debug` | Prints what the game reports for each frame (handy for bug reports) |
 
 ## Screenshots
 

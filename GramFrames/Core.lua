@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.1.5"
+GT.version = "2.1.6"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -542,6 +542,8 @@ SlashCmdList.GRAMFRAMES = function(msg)
         GT.db.minimap.hide = not GT.db.minimap.hide
         GT.Fire("MinimapChanged")
         GT.Print(GT.db.minimap.hide and "minimap button hidden (/gf minimap brings it back)" or "minimap button shown")
+    elseif msg == "debug" then
+        if GT.DebugFrames then GT.DebugFrames() end
     elseif msg == "reset" then
         if InCombatLockdown() then GT.Print("can't reset in combat") return end
         GramFramesDB = CopyDefaults(GT.defaults, {})

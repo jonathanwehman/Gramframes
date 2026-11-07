@@ -2,7 +2,7 @@
 ## Title: |cffff4fa3Gram|r Frames
 ## Notes: Dark, clean raid & party frames for WoW Forever: click-casting with downranking, healer mana, tank tools. /gf
 ## Author: Jon (Grahamaton)
-## Version: 2.1.5
+## Version: 2.1.6
 ## SavedVariables: GramFramesDB
 ## IconTexture: Interface\AddOns\GramFrames\Media\icon
 ## AddonCompartmentFunc: GramFrames_OnAddonCompartmentClick
