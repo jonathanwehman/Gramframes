@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.1.3 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.1.4 (beta)** · Interface 16001 · type `/gf` in game
 
 ## Install
 
@@ -26,6 +26,8 @@ Dark, clean raid and party frames for **WoW Forever**, built from scratch for ta
 ### Looks
 - Dark mode: grey bars, red missing health, class-colored names
 - Pick your own bar and background colors, or use class colors or a healer health gradient
+- Pick a bar texture: Blizzard's, any shared through LibSharedMedia, and EllesmereUI's if you run it
+- "Match EllesmereUI": takes the dark-mode grey straight from EllesmereUI so everything matches
 - Range fade, role and leader icons, raid markers, target highlight
 
 ### Click-casting with downranking

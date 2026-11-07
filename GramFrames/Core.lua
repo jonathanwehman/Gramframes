@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.1.3"
+GT.version = "2.1.4"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -75,6 +75,65 @@ function GT.FontOptions()
     return out
 end
 
+-------------------------------------------------------------------------------
+-- Bar textures: Blizzard built-ins, EllesmereUI's (only if it's installed;
+-- we just point at its files), plus anything shared through LibSharedMedia.
+-------------------------------------------------------------------------------
+local EUI_TEX = "Interface\\AddOns\\EllesmereUI\\media\\textures\\"
+GT.textureChoices = {
+    { "Flat", "Flat (solid)", "Interface\\Buttons\\WHITE8X8" },
+    { "Blizzard", "Blizzard", "Interface\\TargetingFrame\\UI-StatusBar" },
+    { "BlizzardRaid", "Blizzard Raid", "Interface\\RaidFrame\\Raid-Bar-Hp-Fill" },
+    { "BlizzardSkills", "Blizzard Smooth", "Interface\\PaperDollInfoFrame\\UI-Character-Skills-Bar" },
+    { "EUI_Matte", "Matte (EllesmereUI)", EUI_TEX .. "matte.tga", eui = true },
+    { "EUI_Glass", "Glass (EllesmereUI)", EUI_TEX .. "glass.tga", eui = true },
+    { "EUI_Melli", "Melli (EllesmereUI)", EUI_TEX .. "melli.tga", eui = true },
+    { "EUI_Beautiful", "Beautiful (EllesmereUI)", EUI_TEX .. "beautiful.tga", eui = true },
+    { "EUI_Atrocity", "Atrocity (EllesmereUI)", EUI_TEX .. "atrocity.tga", eui = true },
+    { "EUI_Plating", "Plating (EllesmereUI)", EUI_TEX .. "plating.tga", eui = true },
+    { "EUI_Sheer", "Sheer (EllesmereUI)", EUI_TEX .. "sheer.tga", eui = true },
+    { "EUI_GradientLight", "Gradient Light (EllesmereUI)", EUI_TEX .. "gradient-light.tga", eui = true },
+    { "EUI_Pixels", "Pixels (EllesmereUI)", EUI_TEX .. "pixels-fill.tga", eui = true },
+}
+
+local function HaveEUI()
+    local f = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
+    if not f then return false end
+    local ok, loaded = pcall(f, "EllesmereUI")
+    return ok and loaded and true or false
+end
+GT.HaveEUI = HaveEUI
+
+function GT.TextureOptions()
+    local out, seen = {}, {}
+    local eui = HaveEUI()
+    for _, c in ipairs(GT.textureChoices) do
+        if eui or not c.eui then out[#out + 1] = { c[1], c[2] } end
+        seen[c[1]] = true; seen[c[2]] = true
+    end
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
+    if LSM then
+        for _, name in ipairs(LSM:List("statusbar")) do
+            if not seen[name] then out[#out + 1] = { name, name } end
+        end
+    end
+    return out
+end
+
+-- the file for the current layout's bar texture (falls back to flat)
+function GT.GetBarTexture()
+    local key = GT.db and GT.Look().barTexture or "Flat"
+    for _, c in ipairs(GT.textureChoices) do
+        if c[1] == key then
+            if c.eui and not HaveEUI() then break end
+            return c[3]
+        end
+    end
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
+    local path = LSM and LSM:Fetch("statusbar", key, true)
+    return path or "Interface\\Buttons\\WHITE8X8"
+end
+
 local warnedMissing
 function GT.GetFont()
     local key = GT.db and GT.Look().font or "Expressway"
@@ -126,7 +185,9 @@ local VIEW_DEFAULTS = {
         healthColor = "DARK",       -- DARK | CLASS | CLASSDARK | GRADIENT | CUSTOM
         barColor = { 0.17, 0.17, 0.17 },
         lossColor = { 0.62, 0.05, 0.07 },
-        classBG = true,             -- class modes: tint the background with the class color (off = Background Color)
+        classBG = true,
+        barTexture = "Flat",        -- health + power bar texture
+        matchEUI = true,            -- dark mode: take the bar grey from EllesmereUI when it is installed             -- class modes: tint the background with the class color (off = Background Color)
         nameColor = "CLASS",        -- CLASS | WHITE
         nameSize = 12,
         healthText = "NONE",        -- NONE | PERCENT | MISSING
@@ -506,3 +567,16 @@ end
 GT.On("SettingChanged", function(section, key)
     if key == "font" or section == "all" then GT.ApplyFonts() end
 end)
+
+-- one time, for people running EllesmereUI: match its unit frames (Atrocity bars)
+GT.On("Login", function()
+    local G = GT.db and GT.db.general
+    if not G or G.matchEUI1 then return end
+    G.matchEUI1 = true
+    if not GT.HaveEUI() then return end
+    for _, L in pairs(GT.db.layouts) do
+        if L.look and (L.look.barTexture == nil or L.look.barTexture == "Flat") then L.look.barTexture = "EUI_Atrocity" end
+    end
+    GT.Fire("SettingChanged", "layout", "barTexture")
+end)
+

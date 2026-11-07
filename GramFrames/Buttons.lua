@@ -197,6 +197,17 @@ function GT.BuildVisuals(b, kind)
 end
 
 -- Apply appearance settings that don't touch protected attributes
+-- bar texture (health + power, and the background part under them). Safe in combat.
+function GT.ApplyBarTexture(b)
+    local tex = GT.GetBarTexture()
+    if b.gfTex == tex then return end
+    b.gfTex = tex
+    b.health:SetStatusBarTexture(tex)
+    b.healthBG:SetTexture(tex)
+    b.power:SetStatusBarTexture(tex)
+    b.powerBG:SetTexture(tex)
+end
+
 function GT.ApplyLook(b)
     local db = GT.db
     if not db then return end
@@ -204,6 +215,7 @@ function GT.ApplyLook(b)
     local isTarget = b.kind == "target"
 
     b.bg:SetVertexColor(0, 0, 0, look.bgAlpha) -- 1px black edge around the bar
+    GT.ApplyBarTexture(b)
     b.frameBorder:Hide()
 
     local showPower = not isTarget and look.powerBar ~= "NONE"
@@ -503,6 +515,11 @@ function GT.PaintBar(b, r, g, bl, pct, unit)
     local mode = look.healthColor
     local br, bg, bb, lr, lg, lb
     local bc, lc = look.barColor or { 0.17, 0.17, 0.17 }, look.lossColor or { 0.62, 0.05, 0.07 }
+    -- "Match EllesmereUI": use EllesmereUI's own dark-mode fill (its public getter) for the grey
+    if look.matchEUI and (mode == "DARK" or mode == "CUSTOM") and EllesmereUI and EllesmereUI.GetDarkModeFill then
+        local ok, r2, g2, b2 = pcall(EllesmereUI.GetDarkModeFill)
+        if ok and type(r2) == "number" and type(g2) == "number" and type(b2) == "number" then bc = { r2, g2, b2 } end
+    end
     if mode == "DARK" or mode == "CUSTOM" then -- solid: your bar color + your background color
         br, bg, bb = bc[1], bc[2], bc[3]
         lr, lg, lb = lc[1], lc[2], lc[3]

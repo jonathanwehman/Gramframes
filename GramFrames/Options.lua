@@ -80,7 +80,8 @@ local function FrameSections(kind)
             { "dropdown", "Color Mode", "layout.look.healthColor", {
                 { "DARK", "Dark mode (pick colors)" }, { "CLASS", "Class colors" }, { "CLASSDARK", "Class colors (dark)" },
                 { "GRADIENT", "Health gradient (healer)" } } },
-            { "swatch", "Bar Color", "layout.look.barColor", cond = isSolid },
+            { "toggle", "Match EllesmereUI", "layout.look.matchEUI", cond = function() return isSolid() and EllesmereUI ~= nil end },
+            { "swatch", "Bar Color", "layout.look.barColor", cond = function() return isSolid() and not (EllesmereUI and GT.Get("layout.look.matchEUI")) end },
             { "toggle", "Class-Tinted Background", "layout.look.classBG", cond = notSolid },
             { "swatch", "Background Color", "layout.look.lossColor", cond = showBG },
             { "button", "Reset Colors", function(btn)
@@ -89,6 +90,7 @@ local function FrameSections(kind)
                 GT.Set("layout.look.classBG", true)
                 GT.RefreshOptions()
             end },
+            { "dropdown", "Bar Texture", "layout.look.barTexture", "TEXTURES" },
             { "slider", "Border Opacity", "layout.look.bgAlpha", 0, 1, 0.05, 2 },
         } },
         { title = "Text", rows = {
@@ -328,7 +330,7 @@ local function MakeControl(parent, row)
         return UI.Slider(parent, row[4], row[5], row[6], function() return GT.Get(row[3]) end,
             function(v) GT.Set(row[3], v) end, row[7])
     elseif kind == "dropdown" then
-        local opts = row[4] == "FONTS" and GT.FontOptions() or row[4]
+        local opts = (row[4] == "FONTS" and GT.FontOptions()) or (row[4] == "TEXTURES" and GT.TextureOptions()) or row[4]
         return UI.Dropdown(parent, opts, function() return GT.Get(row[3]) end, function(v)
             GT.Set(row[3], v)
             if currentPage then GT.ShowPage(currentPage.key) end -- conditional rows may change
@@ -721,8 +723,8 @@ local function CreateWindow()
     GT.On("SettingChanged", function(section, key)
         if section == "general" and key == "locked" and win.lockToggle then win.lockToggle:Refresh() end
         -- the class-tint switch shows/hides the Background Color picker
-        if key == "classBG" and win:IsShown() and currentPage then GT.ShowPage(currentPage.key) end
-        local isColor = key == "barColor" or key == "lossColor" or key == "classBG" or key == "healthColor" or key == "nameColor"
+        if (key == "classBG" or key == "matchEUI") and win:IsShown() and currentPage then GT.ShowPage(currentPage.key) end
+        local isColor = key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor"
         if isColor then return end -- colors repaint instantly and work in combat; Headers already did it
         if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
         if InCombatLockdown() and not GT.warnedCombat then

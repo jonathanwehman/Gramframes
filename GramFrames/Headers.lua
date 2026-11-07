@@ -552,8 +552,11 @@ GT.On("SettingChanged", function(section, key)
     if (section == "layout" or section == "tank") and key == "pos" then return end
     if section == "minimap" then return end
     -- colors: just repaint (instant, works in combat, no frame rebuild while you drag the picker)
-    if section == "layout" and (key == "barColor" or key == "lossColor" or key == "classBG" or key == "healthColor" or key == "nameColor") then
-        for b in pairs(GT.buttons) do if b.unit then GT.UpdateColor(b) end end
+    if section == "layout" and (key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor") then
+        for b in pairs(GT.buttons) do
+            if key == "barTexture" then GT.ApplyBarTexture(b) end
+            if b.unit then GT.UpdateColor(b) end
+        end
         if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
         return
     end
