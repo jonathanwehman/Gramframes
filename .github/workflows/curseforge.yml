@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-      CF_PROJECT_ID: ${{ vars.CF_PROJECT_ID }}
+      CF_PROJECT_ID: "1788264"
       CF_HOST: https://wow.curseforge.com
     steps:
       - uses: actions/checkout@v4
