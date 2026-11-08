@@ -111,6 +111,17 @@ function GT.BuildVisuals(b, kind)
     b.powerBG:SetAllPoints()
     b.powerBG:SetVertexColor(0, 0, 0, 0.7)
 
+    -- out of range: a flat layer over the whole box (bars, red and all), under the text
+    local veil = CreateFrame("Frame", nil, b)
+    veil:SetPoint("TOPLEFT", 1, -1)
+    veil:SetPoint("BOTTOMRIGHT", -1, 1)
+    veil:SetFrameLevel(b.health:GetFrameLevel() + 1)
+    veil.tex = veil:CreateTexture(nil, "ARTWORK")
+    veil.tex:SetTexture(FLAT)
+    veil.tex:SetAllPoints()
+    veil:SetAlpha(0)
+    b.oorVeil = veil
+
     local overlay = CreateFrame("Frame", nil, b)
     overlay:SetAllPoints()
     overlay:SetFrameLevel(b.health:GetFrameLevel() + 2)
@@ -264,7 +275,8 @@ function GT.ApplyLook(b)
     b.leader:ClearAllPoints()
     b.leader:SetPoint("TOPLEFT", b.health, "TOPLEFT", (look.roleIcon and rs + 4) or 2, -1)
     b.raidIcon:ClearAllPoints()
-    b.raidIcon:SetPoint("TOP", b, "TOP", 0, 6)
+    b.raidIcon:SetSize(look.raidIconSize or 16, look.raidIconSize or 16)
+    b.raidIcon:SetPoint("TOP", b, "TOP", 0, -2) -- inside the box, so the frame above can't cover it
 
     b.aggro:SetThickness(GT.db.aggro.thickness)
     b.targetBorder:SetThickness(1)
@@ -661,10 +673,13 @@ function GT.UpdateRole(b)
 end
 
 function GT.UpdateRaidIcon(b)
-    if not GT.Look().raidIcon or not b.unit then b.raidIcon:Hide() return end
-    local idx = Num(Call(GetRaidTargetIndex, b.unit))
-    if idx and SetRaidTargetIconTexture then
-        SetRaidTargetIconTexture(b.raidIcon, idx)
+    if not GT.Look().raidIcon or not (b.unit or b.fakeMarker) then b.raidIcon:Hide() return end
+    local idx = Num(Call(GetRaidTargetIndex, b.fakeUnit or b.unit)) or b.fakeMarker
+    if idx and idx >= 1 and idx <= 8 then
+        -- the 8 markers sit in a 4x2 sheet
+        local col, row = (idx - 1) % 4, math.floor((idx - 1) / 4)
+        b.raidIcon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
+        b.raidIcon:SetTexCoord(col * 0.25, (col + 1) * 0.25, row * 0.25, (row + 1) * 0.25)
         b.raidIcon:Show()
     else
         b.raidIcon:Hide()
@@ -988,31 +1003,49 @@ end
 
 -- Range fade. UnitInRange can return secret booleans in restricted areas;
 -- SetAlphaFromBoolean lets the client resolve those for us.
+-- inRange: true / false, or a hidden (secret) boolean the client resolves for us.
+-- "BOX" style: grey out the whole box and dim the text; "FADE": fade the whole frame.
+function GT.ApplyRange(b, inRange)
+    local look = GT.Look()
+    local box = (look.rangeStyle or "BOX") == "BOX"
+    local c = look.oorColor or { 0.12, 0.12, 0.12 }
+    b.oorVeil.tex:SetVertexColor(c[1], c[2], c[3], 1)
+    local dim = look.oorTextAlpha or 0.55
+    local function Set(f, inA, outA)
+        if Readable(inRange) then f:SetAlpha(inRange and inA or outA)
+        elseif f.SetAlphaFromBoolean and IsSecret(inRange) then
+            if not pcall(f.SetAlphaFromBoolean, f, inRange, inA, outA) then f:SetAlpha(inA) end
+        else f:SetAlpha(inA) end
+    end
+    if box then
+        b:SetAlpha(1)
+        Set(b.oorVeil, 0, 1)
+        Set(b.overlay, 1, dim)
+    else
+        b.oorVeil:SetAlpha(0); b.overlay:SetAlpha(1)
+        Set(b, 1, look.rangeAlpha)
+    end
+end
+
 function GT.UpdateRange(b)
     local u = b.unit
     if not u or b.kind == "fake" then return end
     local oor = GT.Look().rangeAlpha
     if ((rawequal(HealthPct(u), nil) and Unseen(u)) and true or nil) ~= b.unseen then GT.UpdateHealth(b) end
-    if IsTrue(Call(UnitIsUnit, u, "player")) then b:SetAlpha(1) return end
-    if b.kind == "target" then b:SetAlpha(1) return end
-    -- offline isn't "out of range": steady, slightly dimmed
+    if IsTrue(Call(UnitIsUnit, u, "player")) or b.kind == "target" then GT.ApplyRange(b, true) return end
+    -- offline: its own look (grey bar + OFFLINE), not out-of-range
     local connected = Call(UnitIsConnected, u)
-    if Readable(connected) and connected == false then b:SetAlpha(0.8) return end
+    if Readable(connected) and connected == false then GT.ApplyRange(b, true) b:SetAlpha(0.8) return end
     -- another phase / can't be seen at all: definitely out of range
     local phase = Call(UnitPhaseReason, u)
-    if Readable(phase) and phase ~= nil then b:SetAlpha(oor) return end
+    if Readable(phase) and phase ~= nil then GT.ApplyRange(b, false) return end
     local vis = Call(UnitIsVisible, u)
-    if Readable(vis) and vis == false then b:SetAlpha(oor) return end
+    if Readable(vis) and vis == false then GT.ApplyRange(b, false) return end
     -- the ~40yd check. Go by "in range" alone: its second value only says whether the game
     -- could check, and treating "couldn't check" as in-range made far-away players look close.
     local inRange = Call(UnitInRange, u)
-    if Readable(inRange) then
-        b:SetAlpha(inRange and 1 or oor)
-    elseif b.SetAlphaFromBoolean and IsSecret(inRange) then
-        if not pcall(b.SetAlphaFromBoolean, b, inRange, 1, oor) then b:SetAlpha(1) end
-    else
-        b:SetAlpha(1)
-    end
+    if rawequal(inRange, nil) then inRange = true end
+    GT.ApplyRange(b, inRange)
 end
 
 -- /gf debug: what the game actually reports for each frame (for bug reports)

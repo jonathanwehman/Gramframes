@@ -10,7 +10,18 @@ GT.MODS = {
 GT.MOUSE = { { "1", "Left Click" }, { "2", "Right Click" }, { "3", "Middle Click" }, { "4", "Button 4" }, { "5", "Button 5" } }
 GT.ACTIONS = {
     { "TARGET", "Target" }, { "MENU", "Unit Menu" }, { "ASSIST", "Assist (their target)" }, { "FOCUS", "Set Focus" },
-    { "SPELL", "Cast Spell" }, { "MACRO", "Macro" },
+    { "SPELL", "Cast Spell" }, { "MACRO", "Macro" }, { "MARKER", "Raid Marker" },
+}
+GT.MARKERS = {
+    { "8", "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8:14|t Skull" },
+    { "7", "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_7:14|t Cross" },
+    { "6", "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_6:14|t Square" },
+    { "5", "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_5:14|t Moon" },
+    { "4", "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_4:14|t Triangle" },
+    { "3", "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_3:14|t Diamond" },
+    { "2", "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_2:14|t Circle" },
+    { "1", "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:14|t Star" },
+    { "0", "Clear marker" },
 }
 local ACTION_TYPE = { TARGET = "target", MENU = "togglemenu", ASSIST = "assist", FOCUS = "focus", SPELL = "spell", MACRO = "macro" }
 
@@ -128,6 +139,13 @@ function GT.ClickAttributes()
                 out[#out + 1] = { prefix .. "type" .. btn, "spell" }
                 out[#out + 1] = { prefix .. "spell" .. btn, spell }
             end
+        elseif bnd.action == "MARKER" then
+            -- Blizzard's secure raid-target action: put the marker on this player,
+            -- clicking again on someone who has it takes it off
+            local m = tonumber(bnd.value) or 8
+            out[#out + 1] = { prefix .. "type" .. btn, "raidtarget" }
+            out[#out + 1] = { prefix .. "marker" .. btn, m }
+            out[#out + 1] = { prefix .. "action" .. btn, m == 0 and "clear" or "toggle" }
         elseif bnd.action == "MACRO" then
             if bnd.value and bnd.value ~= "" then
                 out[#out + 1] = { prefix .. "type" .. btn, "macro" }

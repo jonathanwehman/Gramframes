@@ -85,7 +85,7 @@ local function FrameSections(kind)
             { "toggle", "Class-Tinted Background", "layout.look.classBG", cond = notSolid },
             { "swatch", "Background Color", "layout.look.lossColor", cond = showBG },
             { "button", "Reset Colors", function(btn)
-                GT.Set("layout.look.barColor", { 0.17, 0.17, 0.17 })
+                GT.Set("layout.look.barColor", { 0.30, 0.30, 0.30 })
                 GT.Set("layout.look.lossColor", { 0.62, 0.05, 0.07 })
                 GT.Set("layout.look.classBG", true)
                 GT.RefreshOptions()
@@ -116,6 +116,12 @@ local function FrameSections(kind)
             { "slider", "Debuff Size", "layout.debuffs.size", 8, 30, 1 },
             { "slider", "Max Debuffs", "layout.debuffs.max", 1, 6, 1 },
         } },
+        { title = "Out of Range", rows = {
+            { "dropdown", "Style", "layout.look.rangeStyle", { { "BOX", "Grey out the whole box" }, { "FADE", "Fade the frame" } } },
+            { "swatch", "Box Color", "layout.look.oorColor", cond = function() return GT.Get("layout.look.rangeStyle") ~= "FADE" end },
+            { "slider", "Name & Icon Opacity", "layout.look.oorTextAlpha", 0.2, 1, 0.05, 2, cond = function() return GT.Get("layout.look.rangeStyle") ~= "FADE" end },
+            { "slider", "Frame Opacity", "layout.look.rangeAlpha", 0.1, 1, 0.05, 2, cond = function() return GT.Get("layout.look.rangeStyle") == "FADE" end },
+        } },
         { title = "Icons", rows = {
             { "toggle", "Role Icons", "layout.look.roleIcon" },
             { "slider", "Role Icon Size", "layout.look.roleSize", 6, 20, 1 },
@@ -123,7 +129,7 @@ local function FrameSections(kind)
             { "toggle", "Leader Icon", "layout.look.leaderIcon" },
             { "toggle", "Raid Markers", "layout.look.raidIcon" },
             { "toggle", "Highlight My Target", "layout.look.targetHighlight" },
-            { "slider", "Out of Range Opacity", "layout.look.rangeAlpha", 0.1, 1, 0.05, 2 },
+            { "slider", "Raid Marker Size", "layout.look.raidIconSize", 10, 28, 1 },
         } },
     }
     for _, sec in ipairs(rest) do out[#out + 1] = sec end
@@ -274,6 +280,9 @@ function GT.BuildClickRows(parent, width)
             end
             dd(5, function() return GT.RankOptions(bnd.value) end, function() return bnd.rank or "MAX" end,
                 function(v) bnd.rank = v; GT.ApplyAllClicks() end)
+        elseif bnd.action == "MARKER" then
+            if not tonumber(bnd.value) then bnd.value = "8" end
+            dd(4, GT.MARKERS, function() return bnd.value end, function(v) bnd.value = v; GT.ApplyAllClicks() end)
         elseif bnd.action == "MACRO" then
             local box = UI.Input(row, function() return bnd.value end, function(v) bnd.value = v; GT.ApplyAllClicks() end, "/cast [@mouseover] Spell")
             box:SetWidth(cols[4] + cols[5] + 6); box:SetPoint("LEFT", xs[4], 0)
@@ -724,8 +733,8 @@ local function CreateWindow()
     GT.On("SettingChanged", function(section, key)
         if section == "general" and key == "locked" and win.lockToggle then win.lockToggle:Refresh() end
         -- the class-tint switch shows/hides the Background Color picker
-        if (key == "classBG" or key == "matchEUI") and win:IsShown() and currentPage then GT.ShowPage(currentPage.key) end
-        local isColor = key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor"
+        if (key == "classBG" or key == "matchEUI" or key == "rangeStyle") and win:IsShown() and currentPage then GT.ShowPage(currentPage.key) end
+        local isColor = key == "rangeStyle" or key == "oorColor" or key == "oorTextAlpha" or key == "rangeAlpha" or key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor"
         if isColor then return end -- colors repaint instantly and work in combat; Headers already did it
         if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
         if InCombatLockdown() and not GT.warnedCombat then

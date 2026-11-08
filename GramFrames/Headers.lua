@@ -399,7 +399,10 @@ local function FillFake(b, i)
         end
     end
     b.targetBorder:SetShown(GT.Look().targetHighlight and i == 4)
-    b:SetAlpha(i == 11 and GT.Look().rangeAlpha or 1)
+    -- preview: one frame out of range in party (5) and raid (11), a couple of markers
+    GT.ApplyRange(b, not (i == 5 or i == 11))
+    b.fakeMarker = ({ [2] = 8, [7] = 1, [14] = 3 })[i]
+    GT.UpdateRaidIcon(b)
 end
 
 local function FillFakeTarget(t, name, who, mine)
@@ -552,6 +555,12 @@ GT.On("SettingChanged", function(section, key)
     if (section == "layout" or section == "tank") and key == "pos" then return end
     if section == "minimap" then return end
     -- colors: just repaint (instant, works in combat, no frame rebuild while you drag the picker)
+    -- out-of-range look: just re-apply range (instant, combat-safe)
+    if section == "layout" and (key == "rangeStyle" or key == "oorColor" or key == "oorTextAlpha" or key == "rangeAlpha") then
+        GT.ForEachButton(GT.UpdateRange)
+        if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
+        return
+    end
     if section == "layout" and (key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor") then
         for b in pairs(GT.buttons) do
             if key == "barTexture" then GT.ApplyBarTexture(b) end

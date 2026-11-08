@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.1.8"
+GT.version = "2.2.0"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -183,18 +183,22 @@ local VIEW_DEFAULTS = {
     look = {
         font = "Expressway",
         healthColor = "DARK",       -- DARK | CLASS | CLASSDARK | GRADIENT | CUSTOM
-        barColor = { 0.17, 0.17, 0.17 },
+        barColor = { 0.30, 0.30, 0.30 }, -- dark mode grey
         lossColor = { 0.62, 0.05, 0.07 },
         classBG = true,
         barTexture = "Flat",        -- health + power bar texture
-        matchEUI = true,            -- dark mode: take the bar grey from EllesmereUI when it is installed             -- class modes: tint the background with the class color (off = Background Color)
+        matchEUI = false,            -- dark mode: take the bar grey from EllesmereUI when it is installed             -- class modes: tint the background with the class color (off = Background Color)
         nameColor = "CLASS",        -- CLASS | WHITE
         nameSize = 12,
         healthText = "NONE",        -- NONE | PERCENT | MISSING
         healthTextSize = 10,
         powerBar = "NONE",          -- ALL | HEALERS | NONE
         powerHeight = 3,
-        rangeAlpha = 0.40,
+        rangeAlpha = 0.40,          -- "Fade" style only
+        rangeStyle = "BOX",         -- out of range: BOX = grey out the whole box, FADE = fade the frame
+        oorColor = { 0.12, 0.12, 0.12 },
+        oorTextAlpha = 0.55,        -- names/icons when out of range (BOX style)
+        raidIconSize = 16,
         roleIcon = true,
         hideDPSIcon = false,        -- tanks/healers only, if you like it quieter
         roleSize = 10,
@@ -569,6 +573,21 @@ end
 
 GT.On("SettingChanged", function(section, key)
     if key == "font" or section == "all" then GT.ApplyFonts() end
+end)
+
+-- one time: lighter dark-mode grey (only if you still had the old default)
+GT.On("Login", function()
+    local G = GT.db and GT.db.general
+    if not G or G.lightGrey1 then return end
+    G.lightGrey1 = true
+    for _, L in pairs(GT.db.layouts) do
+        local c = L.look and L.look.barColor
+        if type(c) == "table" and math.abs((c[1] or 0) - 0.17) < 0.005 and math.abs((c[2] or 0) - 0.17) < 0.005 then
+            L.look.barColor = { 0.30, 0.30, 0.30 }
+        end
+        if L.look then L.look.matchEUI = false end
+    end
+    GT.Fire("SettingChanged", "layout", "barColor")
 end)
 
 -- one time, for people running EllesmereUI: match its unit frames (Atrocity bars)
