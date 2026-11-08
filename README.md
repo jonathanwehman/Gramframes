@@ -6,6 +6,8 @@ Dark, clean raid and party frames for **WoW Forever**, built from scratch for ta
 
 **Version 2.2.1 (beta)** · Interface 16001 · type `/gf` in game
 
+What's new: see the [changelog](CHANGELOG.md).
+
 ## Install
 
 1. **[Download GramFrames.zip](https://github.com/jonathanwehman/gramframes/raw/main/GramFrames.zip)**
