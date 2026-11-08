@@ -332,6 +332,7 @@ local function OnUnitEvent(self, event, unit)
     elseif event == "UNIT_AURA" then
         GT.UpdateDebuffs(self)
         GT.UpdateBuffs(self)
+        if not InCombatLockdown() then GT.UpdateStatus(self) end -- started/stopped drinking
     elseif event == "UNIT_THREAT_SITUATION_UPDATE" then
         GT.UpdateAggro(self)
     elseif event == "UNIT_NAME_UPDATE" then
@@ -481,6 +482,22 @@ function GT.UpdateHealth(b)
     if GT.Look().healthColor == "GRADIENT" then GT.UpdateColor(b) end
 end
 
+-- eating / drinking: the food & drink buffs share a few names. Out of combat only
+-- (that's when people drink, and aura names can be hidden in combat).
+local DRINK_NAMES = { ["Drink"] = true, ["Food"] = true, ["Food & Drink"] = true, ["Refreshment"] = true,
+    ["Mage Food"] = true, ["Conjured Refreshment"] = true }
+local function IsDrinking(u)
+    if InCombatLockdown() or not (C_UnitAuras and C_UnitAuras.GetAuraDataByIndex) then return false end
+    for i = 1, 40 do
+        local ok, a = pcall(C_UnitAuras.GetAuraDataByIndex, u, i, "HELPFUL")
+        if not ok or not a then return false end
+        local n = a.name
+        if Readable(n) and type(n) == "string" and (DRINK_NAMES[n] or n:find("^Drink") or n:find("^Food")) then return true end
+    end
+    return false
+end
+GT.IsDrinking = IsDrinking
+
 function GT.UpdateStatus(b)
     local u = b.unit
     local connected = Call(UnitIsConnected, u)
@@ -488,9 +505,14 @@ function GT.UpdateStatus(b)
     local dead = Call(UnitIsDeadOrGhost, u)
     b.isDead = IsTrue(dead)
     if b.isOffline then
+        b.status:SetTextColor(0.75, 0.75, 0.78)
         b.status:SetText("OFFLINE"); b.status:Show()
     elseif b.isDead then
+        b.status:SetTextColor(0.75, 0.75, 0.78)
         b.status:SetText(IsTrue(Call(UnitIsGhost, u)) and "GHOST" or "DEAD"); b.status:Show()
+    elseif GT.Look().drinking ~= false and IsDrinking(u) then
+        b.status:SetTextColor(0.45, 0.75, 1)
+        b.status:SetText("DRINKING"); b.status:Show()
     else
         b.status:Hide()
     end
@@ -568,10 +590,19 @@ function GT.PaintBar(b, r, g, bl, pct, unit)
     local mode = look.healthColor
     local br, bg, bb, lr, lg, lb
     local bc, lc = look.barColor or { 0.17, 0.17, 0.17 }, look.lossColor or { 0.62, 0.05, 0.07 }
-    -- "Match EllesmereUI": use EllesmereUI's own dark-mode fill (its public getter) for the grey
+    local ba, la = bc[4] or 1, lc[4] or 1
+    -- "Match EllesmereUI": its own dark-mode health fill + missing-health background (public getters)
     if look.matchEUI and (mode == "DARK" or mode == "CUSTOM") and EllesmereUI and EllesmereUI.GetDarkModeFill then
-        local ok, r2, g2, b2 = pcall(EllesmereUI.GetDarkModeFill)
-        if ok and type(r2) == "number" and type(g2) == "number" and type(b2) == "number" then bc = { r2, g2, b2 } end
+        local ok, r2, g2, b2, a2 = pcall(EllesmereUI.GetDarkModeFill)
+        if ok and type(r2) == "number" and type(g2) == "number" and type(b2) == "number" then
+            bc = { r2, g2, b2 }; ba = type(a2) == "number" and a2 or 1
+        end
+        if EllesmereUI.GetDarkModeBg then
+            local ok2, r3, g3, b3, a3 = pcall(EllesmereUI.GetDarkModeBg)
+            if ok2 and type(r3) == "number" and type(g3) == "number" and type(b3) == "number" then
+                lc = { r3, g3, b3 }; la = type(a3) == "number" and a3 or 1
+            end
+        end
     end
     if mode == "DARK" or mode == "CUSTOM" then -- solid: your bar color + your background color
         br, bg, bb = bc[1], bc[2], bc[3]
@@ -598,9 +629,11 @@ function GT.PaintBar(b, r, g, bl, pct, unit)
     if mode ~= "DARK" and mode ~= "CUSTOM" and look.classBG == false then
         lr, lg, lb = lc[1], lc[2], lc[3] -- your own background under class colors
     end
-    if b.isOffline then br, bg, bb, lr, lg, lb = 0.3, 0.3, 0.3, 0.2, 0.2, 0.2 end
-    if br then b.health:SetStatusBarColor(br, bg, bb) end
-    b.healthBG:SetVertexColor(lr, lg, lb, 1)
+    local solid = mode == "DARK" or mode == "CUSTOM"
+    if not solid then ba, la = 1, 1 end
+    if b.isOffline then br, bg, bb, lr, lg, lb, ba, la = 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 1, 1 end
+    if br then b.health:SetStatusBarColor(br, bg, bb, ba) end
+    b.healthBG:SetVertexColor(lr, lg, lb, la)
     if look.nameColor == "CLASS" and not b.isOffline then
         b.name:SetTextColor(r, g, bl)
     else

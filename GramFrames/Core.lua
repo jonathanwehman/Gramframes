@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.0"
+GT.version = "2.2.1"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -183,11 +183,11 @@ local VIEW_DEFAULTS = {
     look = {
         font = "Expressway",
         healthColor = "DARK",       -- DARK | CLASS | CLASSDARK | GRADIENT | CUSTOM
-        barColor = { 0.30, 0.30, 0.30 }, -- dark mode grey
-        lossColor = { 0.62, 0.05, 0.07 },
+        barColor = { 0.067, 0.067, 0.067, 0.9 }, -- dark mode health (#111111 @ 90%)
+        lossColor = { 0.31, 0.31, 0.31 },    -- dark mode missing health (#4f4f4f)
         classBG = true,
         barTexture = "Flat",        -- health + power bar texture
-        matchEUI = false,            -- dark mode: take the bar grey from EllesmereUI when it is installed             -- class modes: tint the background with the class color (off = Background Color)
+        matchEUI = true,            -- dark mode: take the bar grey from EllesmereUI when it is installed             -- class modes: tint the background with the class color (off = Background Color)
         nameColor = "CLASS",        -- CLASS | WHITE
         nameSize = 12,
         healthText = "NONE",        -- NONE | PERCENT | MISSING
@@ -195,10 +195,11 @@ local VIEW_DEFAULTS = {
         powerBar = "NONE",          -- ALL | HEALERS | NONE
         powerHeight = 3,
         rangeAlpha = 0.40,          -- "Fade" style only
-        rangeStyle = "BOX",         -- out of range: BOX = grey out the whole box, FADE = fade the frame
+        rangeStyle = "FADE",         -- out of range: BOX = grey out the whole box, FADE = fade the frame
         oorColor = { 0.12, 0.12, 0.12 },
         oorTextAlpha = 0.55,        -- names/icons when out of range (BOX style)
         raidIconSize = 16,
+        drinking = true,            -- show DRINKING when someone eats/drinks
         roleIcon = true,
         hideDPSIcon = false,        -- tanks/healers only, if you like it quieter
         roleSize = 10,
@@ -573,6 +574,25 @@ end
 
 GT.On("SettingChanged", function(section, key)
     if key == "font" or section == "all" then GT.ApplyFonts() end
+end)
+
+-- one time: dark mode = dark health over light-grey missing health (EllesmereUI's look),
+-- and out of range back to a plain fade
+GT.On("Login", function()
+    local G = GT.db and GT.db.general
+    if not G or G.darkMode2 then return end
+    G.darkMode2 = true
+    G.lightGrey1 = true -- superseded
+    for _, L in pairs(GT.db.layouts) do
+        local lk = L.look
+        if lk then
+            lk.barColor = { 0.067, 0.067, 0.067, 0.9 }
+            lk.lossColor = { 0.31, 0.31, 0.31 }
+            lk.matchEUI = true
+            lk.rangeStyle = "FADE"
+        end
+    end
+    GT.Fire("SettingChanged", "layout", "barColor")
 end)
 
 -- one time: lighter dark-mode grey (only if you still had the old default)

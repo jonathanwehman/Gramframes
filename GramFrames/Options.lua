@@ -81,12 +81,13 @@ local function FrameSections(kind)
                 { "DARK", "Dark mode (pick colors)" }, { "CLASS", "Class colors" }, { "CLASSDARK", "Class colors (dark)" },
                 { "GRADIENT", "Health gradient (healer)" } } },
             { "toggle", "Match EllesmereUI", "layout.look.matchEUI", cond = function() return isSolid() and EllesmereUI ~= nil end },
-            { "swatch", "Bar Color", "layout.look.barColor", cond = function() return isSolid() and not (EllesmereUI and GT.Get("layout.look.matchEUI")) end },
+            { "swatch", "Health Color", "layout.look.barColor", cond = function() return isSolid() and not (EllesmereUI and GT.Get("layout.look.matchEUI")) end },
             { "toggle", "Class-Tinted Background", "layout.look.classBG", cond = notSolid },
-            { "swatch", "Background Color", "layout.look.lossColor", cond = showBG },
+            { "swatch", "Missing Health Color", "layout.look.lossColor", cond = function()
+                return showBG() and not (isSolid() and EllesmereUI and GT.Get("layout.look.matchEUI")) end },
             { "button", "Reset Colors", function(btn)
-                GT.Set("layout.look.barColor", { 0.30, 0.30, 0.30 })
-                GT.Set("layout.look.lossColor", { 0.62, 0.05, 0.07 })
+                GT.Set("layout.look.barColor", { 0.067, 0.067, 0.067, 0.9 })
+                GT.Set("layout.look.lossColor", { 0.31, 0.31, 0.31 })
                 GT.Set("layout.look.classBG", true)
                 GT.RefreshOptions()
             end },
@@ -130,6 +131,7 @@ local function FrameSections(kind)
             { "toggle", "Raid Markers", "layout.look.raidIcon" },
             { "toggle", "Highlight My Target", "layout.look.targetHighlight" },
             { "slider", "Raid Marker Size", "layout.look.raidIconSize", 10, 28, 1 },
+            { "toggle", "Show Drinking", "layout.look.drinking" },
         } },
     }
     for _, sec in ipairs(rest) do out[#out + 1] = sec end

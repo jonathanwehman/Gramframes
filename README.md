@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.2.0 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.2.1 (beta)** · Interface 16001 · type `/gf` in game
 
 ## Install
 
@@ -24,11 +24,12 @@ Dark, clean raid and party frames for **WoW Forever**, built from scratch for ta
 <p align="center"><img src="images/gramframes-party-card.png" width="600" alt="Party frames"></p>
 
 ### Looks
-- Dark mode: grey bars, red missing health, class-colored names
-- Pick your own bar and background colors, or use class colors or a healer health gradient
+- Dark mode: dark health over light-grey missing health, class-colored names (matches EllesmereUI dark mode if you run it)
+- Pick your own health and missing-health colors, or use class colors or a healer health gradient
 - Pick a bar texture: Blizzard's, any shared through LibSharedMedia, and EllesmereUI's if you run it
 - "Match EllesmereUI": takes the dark-mode grey straight from EllesmereUI so everything matches
-- Out of range: the whole box greys out (or fades, your pick), with real health kept underneath
+- Out of range: the frame fades (or the whole box greys out, your pick), real health kept
+- Shows DRINKING when someone eats or drinks
 - Role and leader icons, raid markers, target highlight
 
 ### Click-casting with downranking
