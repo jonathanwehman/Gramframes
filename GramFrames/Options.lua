@@ -125,6 +125,7 @@ local function FrameSections(kind)
         } },
         { title = "Icons", rows = {
             { "toggle", "Role Icons", "layout.look.roleIcon" },
+            { "dropdown", "Role Icon Style", "layout.look.roleStyle", { { "ROUND", "Blizzard round (like Cell)" }, { "TINY", "Blizzard small" } } },
             { "slider", "Role Icon Size", "layout.look.roleSize", 6, 20, 1 },
             { "toggle", "Hide DPS Icon", "layout.look.hideDPSIcon" },
             { "toggle", "Leader Icon", "layout.look.leaderIcon" },

@@ -660,8 +660,12 @@ function GT.UpdateColor(b)
     local r, g, bl = GT.ClassColor(u)
     r, g, bl = r or 0.4, g or 0.8, bl or 0.4
     local pct
-    local h, m = Num(Call(UnitHealth, u)), Num(Call(UnitHealthMax, u))
-    if h and m and m > 0 then pct = h / m end
+    local hp = Num(HealthPct(u))
+    if hp then pct = hp / 100
+    else
+        local h, m = Num(Call(UnitHealth, u)), Num(Call(UnitHealthMax, u))
+        if h and m and m > 0 then pct = h / m end
+    end
     GT.PaintBar(b, r, g, bl, pct, u)
 end
 
@@ -691,13 +695,36 @@ function GT.UpdateName(b)
 end
 
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
+-- Blizzard's round role icons (shield / cross / sword in a gold ring), the set Cell uses by default
+local ROLE_ROUND_TEX = "Interface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES"
+local ROLE_ROUND_TC = { -- fallback crops of that sheet if Blizzard's helper is missing
+    TANK = { 0, 19/64, 22/64, 41/64 }, HEALER = { 20/64, 39/64, 1/64, 20/64 }, DAMAGER = { 20/64, 39/64, 22/64, 41/64 } }
+local function SetRoleIcon(tex, role, style)
+    if style ~= "TINY" then
+        local l, r, t, bt
+        if GetTexCoordsForRoleSmallCircle then
+            local ok, a, b2, c, d = pcall(GetTexCoordsForRoleSmallCircle, role)
+            if ok and type(a) == "number" then l, r, t, bt = a, b2, c, d end
+        end
+        if not l and ROLE_ROUND_TC[role] then l, r, t, bt = unpack(ROLE_ROUND_TC[role]) end
+        if l then
+            tex:SetTexture(ROLE_ROUND_TEX)
+            tex:SetTexCoord(l, r, t, bt)
+            return true
+        end
+    end
+    tex:SetTexCoord(0, 1, 0, 1)
+    tex:SetAtlas(ROLE_ATLAS[role], false)
+    return true
+end
+GT.SetRoleIcon = SetRoleIcon
 function GT.UpdateRole(b)
     if not GT.Look().roleIcon or b.kind == "target" then b.role:Hide() return end
     local role = b.fakeRole or GT.UnitRole(b.unit)
     local atlas = ROLE_ATLAS[role]
     if atlas and not (role == "DAMAGER" and GT.Look().hideDPSIcon) then
-        b.role:SetAtlas(atlas, false) -- keep OUR size, not the atlas's
-        local rs = GT.Look().roleSize or 10
+        SetRoleIcon(b.role, role, GT.Look().roleStyle)
+        local rs = GT.Look().roleSize or 12
         b.role:SetSize(rs, rs)
         b.role:Show()
     else

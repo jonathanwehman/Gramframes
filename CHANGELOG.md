@@ -1,5 +1,9 @@
 # Gram Frames changelog
 
+## 2.2.2
+- Role icons use Blizzard's round set (shield, cross, sword in a gold ring), the same ones Cell uses by default. The small set is still under Icons → Role Icon Style.
+- Healer gradient color stays right for out-of-range players.
+
 ## 2.2.1
 - Dark mode matches EllesmereUI: dark health over light-grey missing health. With **Match EllesmereUI** on, both colors come straight from EllesmereUI's dark mode.
 - New **Health Color** and **Missing Health Color** pickers (turn off Match EllesmereUI to use your own).
