@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.2.2 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.2.3 (beta)** · Interface 16001 · type `/gf` in game
 
 What's new: see the [changelog](CHANGELOG.md).
 
@@ -67,8 +67,9 @@ Each frame only listens for updates about its own player, and one shared timer h
 
 ## Screenshots
 
-![Raid frames and options](images/gramframes-raid.png)
-![Party frames and options](images/gramframes-party.png)
+![Raid frames](images/gramframes-raid.png)
+![Options with live party preview](images/gramframes-party.png)
+![Click-casting with downranking and raid markers](images/gramframes-clicks.png)
 
 ## Font
 

@@ -1,7 +1,11 @@
 # Gram Frames changelog
 
+## 2.2.3
+- New screenshots and CurseForge art showing the current look.
+- Cleaned up the Role Icon Style labels.
+
 ## 2.2.2
-- Role icons use Blizzard's round set (shield, cross, sword in a gold ring), the same ones Cell uses by default. The small set is still under Icons → Role Icon Style.
+- Role icons use Blizzard's round set (shield, cross, sword in a gold ring). The small set is still under Icons → Role Icon Style.
 - Healer gradient color stays right for out-of-range players.
 
 ## 2.2.1

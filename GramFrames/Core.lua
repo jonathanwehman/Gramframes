@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.2"
+GT.version = "2.2.3"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -203,7 +203,7 @@ local VIEW_DEFAULTS = {
         roleIcon = true,
         hideDPSIcon = false,        -- tanks/healers only, if you like it quieter
         roleSize = 12,
-        roleStyle = "ROUND",        -- ROUND = Blizzard's round role icons (like Cell), TINY = small flat ones
+        roleStyle = "ROUND",        -- ROUND = Blizzard's round role icons, TINY = small flat ones
         leaderIcon = true,
         raidIcon = true,
         targetHighlight = true,

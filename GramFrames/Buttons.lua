@@ -695,7 +695,7 @@ function GT.UpdateName(b)
 end
 
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
--- Blizzard's round role icons (shield / cross / sword in a gold ring), the set Cell uses by default
+-- Blizzard's round role icons (shield / cross / sword in a gold ring)
 local ROLE_ROUND_TEX = "Interface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES"
 local ROLE_ROUND_TC = { -- fallback crops of that sheet if Blizzard's helper is missing
     TANK = { 0, 19/64, 22/64, 41/64 }, HEALER = { 20/64, 39/64, 1/64, 20/64 }, DAMAGER = { 20/64, 39/64, 22/64, 41/64 } }
