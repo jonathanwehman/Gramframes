@@ -55,6 +55,37 @@ local function CreateBorder(parent, layer, sub)
 end
 GT.CreateBorder = CreateBorder
 
+-- A soft red glow just outside the frame that pulses (used for LOSING on tanks).
+-- Built from a few thin rings that fade out, so it needs no special textures.
+local GLOW_RINGS = { 0.75, 0.45, 0.25, 0.1 }
+local GLOW_STEP = 2
+local function CreateGlow(parent, r, g, b)
+    local f = CreateFrame("Frame", nil, parent)
+    f:SetAllPoints()
+    f:SetFrameLevel(parent:GetFrameLevel() + 8)
+    for k, alpha in ipairs(GLOW_RINGS) do
+        local O, I = k * GLOW_STEP, (k - 1) * GLOW_STEP
+        local t, bo, l, ri = Edge(f, "OVERLAY"), Edge(f, "OVERLAY"), Edge(f, "OVERLAY"), Edge(f, "OVERLAY")
+        t:SetPoint("TOPLEFT", -O, O); t:SetPoint("TOPRIGHT", O, O); t:SetHeight(GLOW_STEP)
+        bo:SetPoint("BOTTOMLEFT", -O, -O); bo:SetPoint("BOTTOMRIGHT", O, -O); bo:SetHeight(GLOW_STEP)
+        l:SetPoint("TOPLEFT", -O, I); l:SetPoint("BOTTOMLEFT", -O, -I); l:SetWidth(GLOW_STEP)
+        ri:SetPoint("TOPRIGHT", O, I); ri:SetPoint("BOTTOMRIGHT", O, -I); ri:SetWidth(GLOW_STEP)
+        for _, e in ipairs({ t, bo, l, ri }) do e:SetVertexColor(r, g, b, alpha) end
+    end
+    local ag = f.CreateAnimationGroup and f:CreateAnimationGroup()
+    if ag then
+        local a = ag:CreateAnimation("Alpha")
+        a:SetFromAlpha(1); a:SetToAlpha(0.35); a:SetDuration(0.45)
+        ag:SetLooping("BOUNCE")
+        f.pulse = ag
+    end
+    f:SetScript("OnShow", function(self) if self.pulse then self.pulse:Play() end end)
+    f:SetScript("OnHide", function(self) if self.pulse then self.pulse:Stop() end end)
+    f:Hide()
+    return f
+end
+GT.CreateGlow = CreateGlow
+
 local function NewFont(parent, size, layer)
     local fs = parent:CreateFontString(nil, layer or "OVERLAY")
     GT.SetFont(fs, size or 11, "OUTLINE")
@@ -158,6 +189,7 @@ function GT.BuildVisuals(b, kind)
     b.aggroLabel = NewFont(b.aggro, 9)
     b.aggroLabel:SetPoint("TOPRIGHT", b, "TOPRIGHT", -2, -2)
     b.aggroLabel:SetText("AGGRO")
+    b.losingGlow = CreateGlow(b, 1, 0.05, 0.05)
 
     b.highlight = b.health:CreateTexture(nil, "OVERLAY")
     b.highlight:SetTexture(FLAT)
@@ -806,7 +838,19 @@ local function SetAggroRed(b)
 end
 GT.SetAggroRed = SetAggroRed
 
+-- LOSING gets a pulsing red glow around the frame on top of the red border
+function GT.SetLosingGlow(b, on)
+    if b.losingGlow then b.losingGlow:SetShown(on and true or false) end
+end
+
+local UpdateAggroInner
 function GT.UpdateAggro(b)
+    b._losing = false
+    UpdateAggroInner(b)
+    GT.SetLosingGlow(b, b._losing)
+end
+
+UpdateAggroInner = function(b)
     local a = GT.db.aggro
     local u = b.unit
     if not a.enabled or not u then b.aggro:Hide() return end
@@ -849,6 +893,7 @@ function GT.UpdateAggro(b)
                 b.aggroLabel:SetText("LOSING")
                 b.aggroLabel:SetShown(a.showLabel)
                 b.aggro:SetAlpha(1); b.aggro:Show()
+                b._losing = true
                 return
             end
         elseif a.warnNonTanks and n >= 2 then

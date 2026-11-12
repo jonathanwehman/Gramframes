@@ -1,5 +1,9 @@
 # Gram Frames changelog
 
+## 2.2.6
+- When a tank is **LOSING** aggro, a red glow now pulses around their frame so you can't miss it.
+- Main picture: the party row shows AFK too.
+
 ## 2.2.5
 - Colors, font and bar texture moved to the **General** page. Set them once and they're used by party and raid frames. Your party frame colors carry over.
 - My Target Color and My Target Thickness are on the General page too.

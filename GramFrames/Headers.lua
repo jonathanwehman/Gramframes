@@ -367,9 +367,11 @@ local function FillFake(b, i)
     -- aggro preview
     local a, threat = GT.db.aggro, THREAT[i]
     b.aggro:Hide()
+    GT.SetLosingGlow(b, false)
     if a.enabled and threat then
         if role == "TANK" and threat == 2 and a.showLosingOnTanks then
             GT.SetAggroRed(b); b.aggroLabel:SetText("LOSING"); b.aggroLabel:SetShown(a.showLabel); b.aggro:Show()
+            GT.SetLosingGlow(b, true)
         elseif role ~= "TANK" and a.warnNonTanks then
             if threat >= 3 then
                 GT.SetAggroRed(b); b.aggroLabel:SetText("AGGRO"); b.aggroLabel:SetShown(a.showLabel)
