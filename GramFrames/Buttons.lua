@@ -14,6 +14,7 @@ local UNIT_EVENTS = {
     "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
     "UNIT_AURA", "UNIT_THREAT_SITUATION_UPDATE", "UNIT_CONNECTION", "UNIT_NAME_UPDATE",
     "UNIT_FLAGS", "UNIT_PHASE", "INCOMING_RESURRECT_CHANGED", "UNIT_IN_RANGE_UPDATE",
+    "PLAYER_FLAGS_CHANGED", -- AFK on/off
 }
 
 -------------------------------------------------------------------------------
@@ -149,7 +150,7 @@ function GT.BuildVisuals(b, kind)
     b.frameBorder:SetColor(0, 0, 0, 1)
 
     b.targetBorder = CreateBorder(b, "OVERLAY", 4)
-    b.targetBorder:SetColor(1, 1, 1, 0.9)
+    b.targetBorder:SetColor(1, 0.82, 0.2, 1)
     b.targetBorder:Hide()
 
     b.aggro = CreateBorder(b, "OVERLAY", 5)
@@ -225,7 +226,8 @@ function GT.ApplyLook(b)
     local look, deb = GT.Look(), GT.Debuffs()
     local isTarget = b.kind == "target"
 
-    b.bg:SetVertexColor(0, 0, 0, look.bgAlpha) -- 1px black edge around the bar
+    local ec = look.borderColor or { 0, 0, 0 }
+    b.bg:SetVertexColor(ec[1], ec[2], ec[3], look.bgAlpha) -- 1px edge around the bar
     GT.ApplyBarTexture(b)
     b.frameBorder:Hide()
 
@@ -243,6 +245,8 @@ function GT.ApplyLook(b)
 
     GT.SetFont(b.name, look.nameSize, "OUTLINE")
     GT.SetFont(b.htext, look.healthTextSize, "OUTLINE")
+    local hc = look.healthTextColor or { 1, 1, 1 }
+    b.htext:SetTextColor(hc[1], hc[2], hc[3])
     GT.SetFont(b.status, look.healthTextSize, "OUTLINE")
 
     b.name:ClearAllPoints()
@@ -279,7 +283,7 @@ function GT.ApplyLook(b)
     b.raidIcon:SetPoint("TOP", b, "TOP", 0, -2) -- inside the box, so the frame above can't cover it
 
     b.aggro:SetThickness(GT.db.aggro.thickness)
-    b.targetBorder:SetThickness(1)
+    b.targetBorder:SetThickness(look.targetThickness or 2)
 
     local bsize = GT.Buffs().size
     for i, d in ipairs(b.buffs) do
@@ -337,6 +341,8 @@ local function OnUnitEvent(self, event, unit)
         GT.UpdateAggro(self)
     elseif event == "UNIT_NAME_UPDATE" then
         GT.UpdateName(self); GT.UpdateColor(self)
+    elseif event == "PLAYER_FLAGS_CHANGED" then
+        GT.UpdateStatus(self); GT.UpdateHealthText(self)
     elseif event == "UNIT_IN_RANGE_UPDATE" then
         GT.UpdateRange(self) -- fires often in a moving group; only redo the fade
     else
@@ -410,7 +416,7 @@ end
 
 function GT.UpdateHealthText(b)
     local u, mode = b.unit, GT.Look().healthText
-    if mode == "NONE" or b.isDead or b.isOffline then b.htext:Hide() return end
+    if mode == "NONE" or b.isDead or b.isOffline or b.isAFK then b.htext:Hide() return end
     if mode == "PERCENT" then
         local pct
         if UnitHealthPercent and CurveConstants and CurveConstants.ScaleTo100 then
@@ -498,24 +504,54 @@ local function IsDrinking(u)
 end
 GT.IsDrinking = IsDrinking
 
+-- AFK / offline timers: when we first saw each player go away (by GUID, so it
+-- survives frames reshuffling). Starts counting when Gram Frames notices it.
+local awaySince = {}
+local function AwayKey(u)
+    local g = Call(UnitGUID, u)
+    if Readable(g) and type(g) == "string" then return g end
+    return u
+end
+local function AwayMinutes(u, kind)
+    local key = AwayKey(u)
+    local rec = awaySince[key]
+    local now = GetTime()
+    if not rec or rec.kind ~= kind then
+        rec = { kind = kind, t = now }
+        awaySince[key] = rec
+    end
+    return math.floor((now - rec.t) / 60)
+end
+local function ClearAway(u)
+    awaySince[AwayKey(u)] = nil
+end
+
 function GT.UpdateStatus(b)
     local u = b.unit
     local connected = Call(UnitIsConnected, u)
     b.isOffline = Readable(connected) and connected == false
     local dead = Call(UnitIsDeadOrGhost, u)
     b.isDead = IsTrue(dead)
+    local afk = Call(UnitIsAFK, u)
+    b.isAFK = not b.isOffline and GT.Look().afk ~= false and IsTrue(afk)
+    b.awayTimer = b.isOffline or b.isAFK
+    if b.kind == "target" then b.isAFK = false; b.awayTimer = false end
     if b.isOffline then
         b.status:SetTextColor(0.75, 0.75, 0.78)
-        b.status:SetText("OFFLINE"); b.status:Show()
+        b.status:SetText("OFFLINE " .. AwayMinutes(u, "OFFLINE") .. "m"); b.status:Show()
     elseif b.isDead then
         b.status:SetTextColor(0.75, 0.75, 0.78)
         b.status:SetText(IsTrue(Call(UnitIsGhost, u)) and "GHOST" or "DEAD"); b.status:Show()
+    elseif b.isAFK then
+        b.status:SetTextColor(1, 0.75, 0.3)
+        b.status:SetText("AFK " .. AwayMinutes(u, "AFK") .. "m"); b.status:Show()
     elseif GT.Look().drinking ~= false and IsDrinking(u) then
         b.status:SetTextColor(0.45, 0.75, 1)
         b.status:SetText("DRINKING"); b.status:Show()
     else
         b.status:Hide()
     end
+    if not b.isOffline and not b.isAFK and b.kind ~= "fake" and b.kind ~= "target" then ClearAway(u) end
 end
 
 local POWER_COLORS = {
@@ -636,6 +672,9 @@ function GT.PaintBar(b, r, g, bl, pct, unit)
     b.healthBG:SetVertexColor(lr, lg, lb, la)
     if look.nameColor == "CLASS" and not b.isOffline then
         b.name:SetTextColor(r, g, bl)
+    elseif look.nameColor == "CUSTOM" and not b.isOffline then
+        local nc = look.nameCustomColor or { 1, 1, 1 }
+        b.name:SetTextColor(nc[1], nc[2], nc[3])
     else
         b.name:SetTextColor(1, 1, 1)
     end
@@ -747,15 +786,26 @@ function GT.UpdateRaidIcon(b)
 end
 
 function GT.UpdateTargetHighlight(b)
-    if not GT.Look().targetHighlight or not b.unit then b.targetBorder:Hide() return end
+    local look = GT.Look()
+    if not look.targetHighlight or not b.unit then b.targetBorder:Hide() return end
+    local tc = look.targetColor or { 1, 0.82, 0.2 }
+    b.targetBorder:SetColor(tc[1], tc[2], tc[3], 1)
     b.targetBorder:SetShown(IsTrue(Call(UnitIsUnit, b.unit, "target")))
 end
 
 -- Aggro: the tank's bread and butter.
 --  * healer/DPS with aggro (status 3)      -> red border + AGGRO tag  (go taunt)
---  * healer/DPS about to pull (status 2)   -> orange border
---  * tank losing threat (status 2)         -> orange border + LOSING tag
---  * mob you're watching in the tank panel -> pink border when YOU hold it
+--  * healer/DPS about to pull (status 2)   -> red border
+--  * tank losing threat (status 2)         -> red border + LOSING tag
+--  * mob you're watching in the tank panel -> red border + YOU tag when you hold it
+-- aggro is always bright red (border and label); the label says which kind
+local AGGRO_RED = { 1, 0.05, 0.05 }
+local function SetAggroRed(b)
+    b.aggro:SetColor(AGGRO_RED[1], AGGRO_RED[2], AGGRO_RED[3], 1)
+    b.aggroLabel:SetTextColor(AGGRO_RED[1], AGGRO_RED[2], AGGRO_RED[3])
+end
+GT.SetAggroRed = SetAggroRed
+
 function GT.UpdateAggro(b)
     local a = GT.db.aggro
     local u = b.unit
@@ -765,7 +815,7 @@ function GT.UpdateAggro(b)
         local s = Call(UnitThreatSituation, "player", u)
         local n = Num(s)
         if n and n >= 3 then
-            b.aggro:SetColor(GT.colors.accent[1], GT.colors.accent[2], GT.colors.accent[3], 1)
+            SetAggroRed(b)
             b.aggroLabel:SetText("YOU")
             b.aggroLabel:SetShown(a.showLabel)
             b.aggro:SetAlpha(1)
@@ -773,7 +823,7 @@ function GT.UpdateAggro(b)
         elseif IsSecret(s) and GetAggroCurve() then
             local alpha = Call(aggroCurve.Evaluate, aggroCurve, s)
             if not rawequal(alpha, nil) then
-                b.aggro:SetColor(GT.colors.accent[1], GT.colors.accent[2], GT.colors.accent[3], 1)
+                SetAggroRed(b)
                 b.aggroLabel:SetText("YOU")
                 b.aggroLabel:SetShown(a.showLabel)
                 b.aggro:SetAlpha(alpha)
@@ -795,7 +845,7 @@ function GT.UpdateAggro(b)
     if n then
         if isTank then
             if a.showLosingOnTanks and n == 2 then
-                b.aggro:SetColor(1, 0.55, 0.1, 1)
+                SetAggroRed(b)
                 b.aggroLabel:SetText("LOSING")
                 b.aggroLabel:SetShown(a.showLabel)
                 b.aggro:SetAlpha(1); b.aggro:Show()
@@ -803,11 +853,11 @@ function GT.UpdateAggro(b)
             end
         elseif a.warnNonTanks and n >= 2 then
             if n >= 3 then
-                b.aggro:SetColor(1, 0.12, 0.12, 1)
+                SetAggroRed(b)
                 b.aggroLabel:SetText("AGGRO")
                 b.aggroLabel:SetShown(a.showLabel)
             else
-                b.aggro:SetColor(1, 0.55, 0.1, 1)
+                SetAggroRed(b)
                 b.aggroLabel:Hide()
             end
             b.aggro:SetAlpha(1); b.aggro:Show()
@@ -818,7 +868,7 @@ function GT.UpdateAggro(b)
         -- threat is secret: let the client decide visibility through the curve
         local alpha = Call(aggroCurve.Evaluate, aggroCurve, status)
         if not rawequal(alpha, nil) then
-            b.aggro:SetColor(1, 0.12, 0.12, 1)
+            SetAggroRed(b)
             b.aggroLabel:SetText("AGGRO")
             b.aggroLabel:SetShown(a.showLabel)
             b.aggro:SetAlpha(alpha)
@@ -1187,11 +1237,22 @@ GT.On("GROUP_ROSTER_UPDATE", function()
 end)
 
 local ticker = CreateFrame("Frame")
-local elapsedRange, elapsedTarget = 0, 0
+local elapsedRange, elapsedTarget, elapsedAway = 0, 0, 0
 ticker:SetScript("OnUpdate", function(_, dt)
     if not GT.db then return end
     elapsedRange = elapsedRange + dt
     elapsedTarget = elapsedTarget + dt
+    elapsedAway = elapsedAway + dt
+    if elapsedAway >= 5 then -- tick the AFK / OFFLINE minute counters (and catch AFK changes)
+        elapsedAway = 0
+        for b in pairs(GT.buttons) do
+            if b.unit and b:IsVisible() and b.kind ~= "fake" then
+                local was = b.awayTimer
+                GT.UpdateStatus(b)
+                if was ~= b.awayTimer then GT.UpdateHealthText(b) end
+            end
+        end
+    end
     if elapsedRange >= 0.4 then
         elapsedRange = 0
         for b in pairs(GT.buttons) do

@@ -1,5 +1,11 @@
 # Gram Frames changelog
 
+## 2.2.4
+- The box around the person you have targeted is gold now instead of white. Pick any color and thickness under Icons → My Target Color / My Target Thickness.
+- Aggro is always bright red: the border and the AGGRO / LOSING / YOU label.
+- **AFK** shows on the frame with a minute timer (AFK 3m). **OFFLINE** shows its minutes too (OFFLINE 12m). Turn AFK off under Icons → Show AFK.
+- More color pickers: Name Color → Pick a color, Health Text Color, and Border Color.
+
 ## 2.2.3
 - New screenshots and CurseForge art showing the current look.
 - Cleaned up the Role Icon Style labels.

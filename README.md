@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.2.3 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.2.4 (beta)** · Interface 16001 · type `/gf` in game
 
 What's new: see the [changelog](CHANGELOG.md).
 
@@ -32,7 +32,9 @@ What's new: see the [changelog](CHANGELOG.md).
 - "Match EllesmereUI": takes the dark-mode grey straight from EllesmereUI so everything matches
 - Out of range: the frame fades (or the whole box greys out, your pick), real health kept
 - Shows DRINKING when someone eats or drinks
-- Blizzard round role icons (tank shield, healer cross, DPS sword), leader icon, raid markers, target highlight
+- Blizzard round role icons (tank shield, healer cross, DPS sword), leader icon, raid markers, gold target highlight (pick your own color)
+- AFK and OFFLINE show on the frame with how many minutes they've been away
+- Color pickers for names, health text, frame border and target box
 
 ### Click-casting with downranking
 - Bind any modifier + mouse button to a spell, macro, raid marker, target, assist, focus or menu
@@ -50,7 +52,7 @@ What's new: see the [changelog](CHANGELOG.md).
 
 ### Tank tools
 - Tank panel with each tank and what they're targeting (own spot for party and raid)
-- Aggro alerts: colored border when someone else pulls threat
+- Aggro alerts: bright red border and label when someone else pulls threat
 
 ### Lightweight
 Each frame only listens for updates about its own player, and one shared timer handles range checks.

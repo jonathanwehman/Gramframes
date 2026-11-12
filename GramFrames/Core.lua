@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.3"
+GT.version = "2.2.4"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -188,7 +188,10 @@ local VIEW_DEFAULTS = {
         classBG = true,
         barTexture = "Flat",        -- health + power bar texture
         matchEUI = true,            -- dark mode: take the bar grey from EllesmereUI when it is installed             -- class modes: tint the background with the class color (off = Background Color)
-        nameColor = "CLASS",        -- CLASS | WHITE
+        nameColor = "CLASS",        -- CLASS | WHITE | CUSTOM
+        nameCustomColor = { 1, 1, 1 },
+        healthTextColor = { 1, 1, 1 },
+        borderColor = { 0, 0, 0 },  -- the thin edge around each frame
         nameSize = 12,
         healthText = "NONE",        -- NONE | PERCENT | MISSING
         healthTextSize = 10,
@@ -200,6 +203,7 @@ local VIEW_DEFAULTS = {
         oorTextAlpha = 0.55,        -- names/icons when out of range (BOX style)
         raidIconSize = 16,
         drinking = true,            -- show DRINKING when someone eats/drinks
+        afk = true,                 -- show AFK with a minute timer (offline always shows its timer)
         roleIcon = true,
         hideDPSIcon = false,        -- tanks/healers only, if you like it quieter
         roleSize = 12,
@@ -207,6 +211,8 @@ local VIEW_DEFAULTS = {
         leaderIcon = true,
         raidIcon = true,
         targetHighlight = true,
+        targetColor = { 1, 0.82, 0.2 }, -- gold box around the person you have targeted
+        targetThickness = 2,
         bgAlpha = 1,
     },
     buffs = {

@@ -92,14 +92,17 @@ local function FrameSections(kind)
                 GT.RefreshOptions()
             end },
             { "dropdown", "Bar Texture", "layout.look.barTexture", "TEXTURES" },
+            { "swatch", "Border Color", "layout.look.borderColor" },
             { "slider", "Border Opacity", "layout.look.bgAlpha", 0, 1, 0.05, 2 },
         } },
         { title = "Text", rows = {
             { "dropdown", "Font", "layout.look.font", "FONTS" },
-            { "dropdown", "Name Color", "layout.look.nameColor", { { "CLASS", "Class color" }, { "WHITE", "White" } } },
+            { "dropdown", "Name Color", "layout.look.nameColor", { { "CLASS", "Class color" }, { "WHITE", "White" }, { "CUSTOM", "Pick a color" } } },
+            { "swatch", "Custom Name Color", "layout.look.nameCustomColor", cond = function() return GT.Get("layout.look.nameColor") == "CUSTOM" end },
             { "slider", "Name Size", "layout.look.nameSize", 8, 20, 1 },
             { "dropdown", "Health Text", "layout.look.healthText", { { "NONE", "None" }, { "PERCENT", "Percent" }, { "MISSING", "Missing health" } } },
             { "slider", "Health Text Size", "layout.look.healthTextSize", 8, 18, 1 },
+            { "swatch", "Health Text Color", "layout.look.healthTextColor" },
         } },
         { title = "Power", rows = {
             { "dropdown", "Power Bar", "layout.look.powerBar", { { "NONE", "Off" }, { "HEALERS", "Healers only" }, { "ALL", "Everyone" } } },
@@ -131,8 +134,11 @@ local function FrameSections(kind)
             { "toggle", "Leader Icon", "layout.look.leaderIcon" },
             { "toggle", "Raid Markers", "layout.look.raidIcon" },
             { "toggle", "Highlight My Target", "layout.look.targetHighlight" },
+            { "swatch", "My Target Color", "layout.look.targetColor", cond = function() return GT.Get("layout.look.targetHighlight") end },
+            { "slider", "My Target Thickness", "layout.look.targetThickness", 1, 5, 1, cond = function() return GT.Get("layout.look.targetHighlight") end },
             { "slider", "Raid Marker Size", "layout.look.raidIconSize", 10, 28, 1 },
             { "toggle", "Show Drinking", "layout.look.drinking" },
+            { "toggle", "Show AFK (with minutes)", "layout.look.afk" },
         } },
     }
     for _, sec in ipairs(rest) do out[#out + 1] = sec end
@@ -155,7 +161,7 @@ local pages = {
       } },
     { key = "tank", group = "Tank", title = "Tank Panel", icon = "Interface\\Icons\\Ability_Warrior_DefensiveStance",
       toggle = "tank.enabled",
-      desc = "Every tank plus what they're hitting. Click a target to grab it, pink = you hold it.",
+      desc = "Every tank plus what they're hitting. Click a target to grab it. Red border + YOU = you hold it.",
       sections = {
         { title = "Panel", rows = {
             { "toggle", "Show Tank Targets", "tank.showTargets" },
@@ -168,7 +174,7 @@ local pages = {
       } },
     { key = "aggro", group = "Tank", title = "Aggro Alerts", icon = "Interface\\Icons\\Spell_Nature_Reincarnation",
       toggle = "aggro.enabled",
-      desc = "Know who to taunt off of. Red = a healer or DPS has aggro, orange = they're close.",
+      desc = "Know who to taunt off of. A red border means aggro trouble: AGGRO, LOSING, or YOU on the tank panel.",
       sections = {
         { title = "Warnings", rows = {
             { "toggle", "Warn When Healer/DPS Pulls", "aggro.warnNonTanks" },
@@ -736,8 +742,9 @@ local function CreateWindow()
     GT.On("SettingChanged", function(section, key)
         if section == "general" and key == "locked" and win.lockToggle then win.lockToggle:Refresh() end
         -- the class-tint switch shows/hides the Background Color picker
-        if (key == "classBG" or key == "matchEUI" or key == "rangeStyle") and win:IsShown() and currentPage then GT.ShowPage(currentPage.key) end
+        if (key == "classBG" or key == "matchEUI" or key == "rangeStyle" or key == "targetHighlight") and win:IsShown() and currentPage then GT.ShowPage(currentPage.key) end
         local isColor = key == "rangeStyle" or key == "oorColor" or key == "oorTextAlpha" or key == "rangeAlpha" or key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor"
+            or key == "nameCustomColor" or key == "targetColor" or key == "healthTextColor" or key == "borderColor"
         if isColor then return end -- colors repaint instantly and work in combat; Headers already did it
         if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
         if InCombatLockdown() and not GT.warnedCombat then

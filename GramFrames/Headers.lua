@@ -341,7 +341,14 @@ local function FillFake(b, i)
     b.name:SetText(name)
     local mode = GT.Look().healthText
     if hp <= 0 then
+        b.status:SetTextColor(0.75, 0.75, 0.78)
         b.status:SetText("DEAD"); b.status:Show(); b.htext:Hide()
+    elseif i == 3 and GT.Look().afk ~= false then -- preview: someone AFK for a few minutes
+        b.status:SetTextColor(1, 0.75, 0.3)
+        b.status:SetText("AFK 4m"); b.status:Show(); b.htext:Hide()
+    elseif i == 12 then -- preview: someone offline (raid sizes only)
+        b.status:SetTextColor(0.75, 0.75, 0.78)
+        b.status:SetText("OFFLINE 12m"); b.status:Show(); b.htext:Hide()
     else
         b.status:Hide()
         if mode == "PERCENT" then b.htext:SetText(string.format("%.0f%%", hp * 100)); b.htext:Show()
@@ -362,12 +369,12 @@ local function FillFake(b, i)
     b.aggro:Hide()
     if a.enabled and threat then
         if role == "TANK" and threat == 2 and a.showLosingOnTanks then
-            b.aggro:SetColor(1, 0.55, 0.1, 1); b.aggroLabel:SetText("LOSING"); b.aggroLabel:SetShown(a.showLabel); b.aggro:Show()
+            GT.SetAggroRed(b); b.aggroLabel:SetText("LOSING"); b.aggroLabel:SetShown(a.showLabel); b.aggro:Show()
         elseif role ~= "TANK" and a.warnNonTanks then
             if threat >= 3 then
-                b.aggro:SetColor(1, 0.12, 0.12, 1); b.aggroLabel:SetText("AGGRO"); b.aggroLabel:SetShown(a.showLabel)
+                GT.SetAggroRed(b); b.aggroLabel:SetText("AGGRO"); b.aggroLabel:SetShown(a.showLabel)
             else
-                b.aggro:SetColor(1, 0.55, 0.1, 1); b.aggroLabel:Hide()
+                GT.SetAggroRed(b); b.aggroLabel:Hide()
             end
             b.aggro:Show()
         end
@@ -398,6 +405,8 @@ local function FillFake(b, i)
             ic.count:SetText(""); ic.cd:Hide(); ic:Show()
         end
     end
+    local tc = GT.Look().targetColor or { 1, 0.82, 0.2 }
+    b.targetBorder:SetColor(tc[1], tc[2], tc[3], 1)
     b.targetBorder:SetShown(GT.Look().targetHighlight and i == 4)
     -- preview: one frame out of range in party (5) and raid (11), a couple of markers
     GT.ApplyRange(b, not (i == 5 or i == 11))
@@ -417,7 +426,7 @@ local function FillFakeTarget(t, name, who, mine)
     t.htext:SetText(mine and "62%" or "88%"); t.htext:SetShown(GT.Look().healthText ~= "NONE")
     t.aggro:Hide()
     if GT.db.aggro.enabled and mine then
-        t.aggro:SetColor(GT.colors.accent[1], GT.colors.accent[2], GT.colors.accent[3], 1)
+        GT.SetAggroRed(t)
         t.aggroLabel:SetText("YOU"); t.aggroLabel:SetShown(GT.db.aggro.showLabel)
         t.aggro:SetAlpha(1); t.aggro:Show()
     end
@@ -561,7 +570,23 @@ GT.On("SettingChanged", function(section, key)
         if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
         return
     end
-    if section == "layout" and (key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor") then
+    if section == "layout" and (key == "targetColor" or key == "healthTextColor" or key == "borderColor") then
+        local look = GT.Look()
+        for b in pairs(GT.buttons) do
+            if key == "borderColor" then
+                local ec = look.borderColor or { 0, 0, 0 }
+                b.bg:SetVertexColor(ec[1], ec[2], ec[3], look.bgAlpha)
+            elseif key == "healthTextColor" then
+                local hc = look.healthTextColor or { 1, 1, 1 }
+                b.htext:SetTextColor(hc[1], hc[2], hc[3])
+            elseif b.unit then
+                GT.UpdateTargetHighlight(b)
+            end
+        end
+        if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
+        return
+    end
+    if section == "layout" and (key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor" or key == "nameCustomColor") then
         for b in pairs(GT.buttons) do
             if key == "barTexture" then GT.ApplyBarTexture(b) end
             if b.unit then GT.UpdateColor(b) end
