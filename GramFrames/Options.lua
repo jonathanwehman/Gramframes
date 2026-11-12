@@ -11,9 +11,9 @@ local ROW_H, SECTION_HEADER_H = 32, 30
 -------------------------------------------------------------------------------
 local yes = function() return true end
 local isCombined = function() return GT.Get("layout.groupMode") == "COMBINED" end
-local isSolid = function() local m = GT.Get("layout.look.healthColor"); return m == "DARK" or m == "CUSTOM" end
+local isSolid = function() local m = GT.Get("style.healthColor"); return m == "DARK" or m == "CUSTOM" end
 local notSolid = function() return not isSolid() end
-local showBG = function() return isSolid() or GT.Get("layout.look.classBG") == false end
+local showBG = function() return isSolid() or GT.Get("style.classBG") == false end
 
 -- the settings every frame type has; Party Frames and Raid Frames each get their own copy
 local function FrameSections(kind)
@@ -76,33 +76,11 @@ local function FrameSections(kind)
             { "slider", "Group Spacing", "layout.groupSpacing", 0, 30, 1, cond = function() return kind == "raid" end },
             { "slider", "Scale", "layout.scale", 0.5, 2, 0.05, 2 },
         } },
-        { title = "Health Bar", rows = {
-            { "dropdown", "Color Mode", "layout.look.healthColor", {
-                { "DARK", "Dark mode (pick colors)" }, { "CLASS", "Class colors" }, { "CLASSDARK", "Class colors (dark)" },
-                { "GRADIENT", "Health gradient (healer)" } } },
-            { "toggle", "Match EllesmereUI", "layout.look.matchEUI", cond = function() return isSolid() and EllesmereUI ~= nil end },
-            { "swatch", "Health Color", "layout.look.barColor", cond = function() return isSolid() and not (EllesmereUI and GT.Get("layout.look.matchEUI")) end },
-            { "toggle", "Class-Tinted Background", "layout.look.classBG", cond = notSolid },
-            { "swatch", "Missing Health Color", "layout.look.lossColor", cond = function()
-                return showBG() and not (isSolid() and EllesmereUI and GT.Get("layout.look.matchEUI")) end },
-            { "button", "Reset Colors", function(btn)
-                GT.Set("layout.look.barColor", { 0.067, 0.067, 0.067, 0.9 })
-                GT.Set("layout.look.lossColor", { 0.31, 0.31, 0.31 })
-                GT.Set("layout.look.classBG", true)
-                GT.RefreshOptions()
-            end },
-            { "dropdown", "Bar Texture", "layout.look.barTexture", "TEXTURES" },
-            { "swatch", "Border Color", "layout.look.borderColor" },
-            { "slider", "Border Opacity", "layout.look.bgAlpha", 0, 1, 0.05, 2 },
-        } },
         { title = "Text", rows = {
-            { "dropdown", "Font", "layout.look.font", "FONTS" },
-            { "dropdown", "Name Color", "layout.look.nameColor", { { "CLASS", "Class color" }, { "WHITE", "White" }, { "CUSTOM", "Pick a color" } } },
-            { "swatch", "Custom Name Color", "layout.look.nameCustomColor", cond = function() return GT.Get("layout.look.nameColor") == "CUSTOM" end },
+            { "info", "", "Font and text colors are on the General page.", full = true },
             { "slider", "Name Size", "layout.look.nameSize", 8, 20, 1 },
             { "dropdown", "Health Text", "layout.look.healthText", { { "NONE", "None" }, { "PERCENT", "Percent" }, { "MISSING", "Missing health" } } },
             { "slider", "Health Text Size", "layout.look.healthTextSize", 8, 18, 1 },
-            { "swatch", "Health Text Color", "layout.look.healthTextColor" },
         } },
         { title = "Power", rows = {
             { "dropdown", "Power Bar", "layout.look.powerBar", { { "NONE", "Off" }, { "HEALERS", "Healers only" }, { "ALL", "Everyone" } } },
@@ -133,9 +111,7 @@ local function FrameSections(kind)
             { "toggle", "Hide DPS Icon", "layout.look.hideDPSIcon" },
             { "toggle", "Leader Icon", "layout.look.leaderIcon" },
             { "toggle", "Raid Markers", "layout.look.raidIcon" },
-            { "toggle", "Highlight My Target", "layout.look.targetHighlight" },
-            { "swatch", "My Target Color", "layout.look.targetColor", cond = function() return GT.Get("layout.look.targetHighlight") end },
-            { "slider", "My Target Thickness", "layout.look.targetThickness", 1, 5, 1, cond = function() return GT.Get("layout.look.targetHighlight") end },
+            { "toggle", "Highlight My Target", "layout.look.targetHighlight" }, -- color/thickness: General
             { "slider", "Raid Marker Size", "layout.look.raidIconSize", 10, 28, 1 },
             { "toggle", "Show Drinking", "layout.look.drinking" },
             { "toggle", "Show AFK (with minutes)", "layout.look.afk" },
@@ -214,8 +190,42 @@ local pages = {
         } },
       } },
     { key = "general", group = "Setup", title = "General", icon = "Interface\\Icons\\INV_Misc_Gear_01",
-      desc = "Lock, minimap button, Blizzard frames and reset. /gf opens this window.",
+      desc = "Colors, font and bar texture for party and raid, plus lock, minimap and reset. /gf opens this window.",
       sections = {
+        { title = "Health Bar", rows = {
+            { "dropdown", "Color Mode", "style.healthColor", {
+                { "DARK", "Dark mode (pick colors)" }, { "CLASS", "Class colors" }, { "CLASSDARK", "Class colors (dark)" },
+                { "GRADIENT", "Health gradient (healer)" } } },
+            { "toggle", "Match EllesmereUI", "style.matchEUI", cond = function() return isSolid() and EllesmereUI ~= nil end },
+            { "swatch", "Health Color", "style.barColor", cond = function() return isSolid() and not (EllesmereUI and GT.Get("style.matchEUI")) end },
+            { "toggle", "Class-Tinted Background", "style.classBG", cond = notSolid },
+            { "swatch", "Missing Health Color", "style.lossColor", cond = function()
+                return showBG() and not (isSolid() and EllesmereUI and GT.Get("style.matchEUI")) end },
+            { "button", "Reset Colors", function(btn)
+                GT.Set("style.barColor", { 0.067, 0.067, 0.067, 0.9 })
+                GT.Set("style.lossColor", { 0.31, 0.31, 0.31 })
+                GT.Set("style.classBG", true)
+                GT.RefreshOptions()
+            end },
+            { "dropdown", "Bar Texture", "style.barTexture", "TEXTURES" },
+            { "swatch", "Border Color", "style.borderColor" },
+            { "slider", "Border Opacity", "style.bgAlpha", 0, 1, 0.05, 2 },
+        } },
+        { title = "Text", rows = {
+            { "dropdown", "Font", "style.font", "FONTS" },
+            { "dropdown", "Name Color", "style.nameColor", { { "CLASS", "Class color" }, { "WHITE", "White" }, { "CUSTOM", "Pick a color" } } },
+            { "swatch", "Custom Name Color", "style.nameCustomColor", cond = function() return GT.Get("style.nameColor") == "CUSTOM" end },
+            { "swatch", "Health Text Color", "style.healthTextColor" },
+        } },
+        { title = "My Target", rows = {
+            { "swatch", "My Target Color", "style.targetColor" },
+            { "slider", "My Target Thickness", "style.targetThickness", 1, 5, 1 },
+            { "button", "Reset Target Color", function()
+                GT.Set("style.targetColor", { 1, 0.82, 0.2 })
+                GT.Set("style.targetThickness", 2)
+                GT.RefreshOptions()
+            end },
+        } },
         { title = "Frames", rows = {
             { "toggle", "Lock Frames", "general.locked" },
             { "toggle", "Hide When Solo", "general.hideSolo" },
@@ -742,7 +752,7 @@ local function CreateWindow()
     GT.On("SettingChanged", function(section, key)
         if section == "general" and key == "locked" and win.lockToggle then win.lockToggle:Refresh() end
         -- the class-tint switch shows/hides the Background Color picker
-        if (key == "classBG" or key == "matchEUI" or key == "rangeStyle" or key == "targetHighlight") and win:IsShown() and currentPage then GT.ShowPage(currentPage.key) end
+        if (key == "classBG" or key == "matchEUI" or key == "rangeStyle" or key == "nameColor") and win:IsShown() and currentPage then GT.ShowPage(currentPage.key) end
         local isColor = key == "rangeStyle" or key == "oorColor" or key == "oorTextAlpha" or key == "rangeAlpha" or key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor"
             or key == "nameCustomColor" or key == "targetColor" or key == "healthTextColor" or key == "borderColor"
         if isColor then return end -- colors repaint instantly and work in combat; Headers already did it

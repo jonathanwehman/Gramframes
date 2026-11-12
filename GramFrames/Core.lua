@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.4"
+GT.version = "2.2.5"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -181,17 +181,6 @@ GT.colors = {
 -- each layout (party / 10 / 20 / 40) carries its own look, buffs and debuffs
 local VIEW_DEFAULTS = {
     look = {
-        font = "Expressway",
-        healthColor = "DARK",       -- DARK | CLASS | CLASSDARK | GRADIENT | CUSTOM
-        barColor = { 0.067, 0.067, 0.067, 0.9 }, -- dark mode health (#111111 @ 90%)
-        lossColor = { 0.31, 0.31, 0.31 },    -- dark mode missing health (#4f4f4f)
-        classBG = true,
-        barTexture = "Flat",        -- health + power bar texture
-        matchEUI = true,            -- dark mode: take the bar grey from EllesmereUI when it is installed             -- class modes: tint the background with the class color (off = Background Color)
-        nameColor = "CLASS",        -- CLASS | WHITE | CUSTOM
-        nameCustomColor = { 1, 1, 1 },
-        healthTextColor = { 1, 1, 1 },
-        borderColor = { 0, 0, 0 },  -- the thin edge around each frame
         nameSize = 12,
         healthText = "NONE",        -- NONE | PERCENT | MISSING
         healthTextSize = 10,
@@ -211,9 +200,6 @@ local VIEW_DEFAULTS = {
         leaderIcon = true,
         raidIcon = true,
         targetHighlight = true,
-        targetColor = { 1, 0.82, 0.2 }, -- gold box around the person you have targeted
-        targetThickness = 2,
-        bgAlpha = 1,
     },
     buffs = {
         enabled = true,
@@ -268,8 +254,29 @@ GT.PARTY_STYLE = PARTY_STYLE
 
 GT.LAYOUTS = { { "party", "Solo / Party" }, { "raid10", "10-man Raid" }, { "raid20", "20-man Raid" }, { "raid40", "40-man Raid" } }
 
+-- colors, font and bar texture: one set for party and raid alike (General page)
+local STYLE_DEFAULTS = {
+    font = "Expressway",
+    healthColor = "DARK",       -- DARK | CLASS | CLASSDARK | GRADIENT | CUSTOM
+    barColor = { 0.067, 0.067, 0.067, 0.9 }, -- dark mode health (#111111 @ 90%)
+    lossColor = { 0.31, 0.31, 0.31 },    -- dark mode missing health (#4f4f4f)
+    classBG = true,             -- class modes: tint the background with the class color
+    barTexture = "Flat",        -- health + power bar texture
+    matchEUI = true,            -- dark mode: take the bar grey from EllesmereUI when it is installed
+    nameColor = "CLASS",        -- CLASS | WHITE | CUSTOM
+    nameCustomColor = { 1, 1, 1 },
+    healthTextColor = { 1, 1, 1 },
+    borderColor = { 0, 0, 0 },  -- the thin edge around each frame
+    bgAlpha = 1,                -- border opacity
+    targetColor = { 1, 0.82, 0.2 }, -- gold box around the person you have targeted
+    targetThickness = 2,
+}
+GT.STYLE_KEYS = {}
+for k in pairs(STYLE_DEFAULTS) do GT.STYLE_KEYS[k] = true end
+
 GT.defaults = {
     version = 2,
+    style = STYLE_DEFAULTS,
     layouts = {
         party = PartyDefaults(),
         raid10 = LayoutDefaults(-360, 60),
@@ -417,7 +424,17 @@ function GT.ViewKey()
     return GT.ActiveLayoutKey()
 end
 local function View() return GT.db.layouts[GT.ViewKey()] or GT.db.layouts.party end
-function GT.Look() return View().look end
+-- GT.Look(): the on-screen layout's look, with the shared style (colors, font,
+-- texture) read from GT.db.style. Read-only: change settings with GT.Set.
+local STYLE_KEYS = GT.STYLE_KEYS
+local lookProxy = setmetatable({}, {
+    __index = function(_, k)
+        if STYLE_KEYS[k] then return GT.db.style[k] end
+        return View().look[k]
+    end,
+    __newindex = function() error("GramFrames: use GT.Set to change settings") end,
+})
+function GT.Look() return lookProxy end
 function GT.Buffs() return View().buffs end
 function GT.Debuffs() return View().debuffs end
 
@@ -599,7 +616,7 @@ GT.On("Login", function()
             lk.rangeStyle = "FADE"
         end
     end
-    GT.Fire("SettingChanged", "layout", "barColor")
+    GT.Fire("SettingChanged", "style", "barColor")
 end)
 
 -- one time: lighter dark-mode grey (only if you still had the old default)
@@ -614,7 +631,7 @@ GT.On("Login", function()
         end
         if L.look then L.look.matchEUI = false end
     end
-    GT.Fire("SettingChanged", "layout", "barColor")
+    GT.Fire("SettingChanged", "style", "barColor")
 end)
 
 -- one time, for people running EllesmereUI: match its unit frames (Atrocity bars)
@@ -626,6 +643,21 @@ GT.On("Login", function()
     for _, L in pairs(GT.db.layouts) do
         if L.look and (L.look.barTexture == nil or L.look.barTexture == "Flat") then L.look.barTexture = "EUI_Atrocity" end
     end
-    GT.Fire("SettingChanged", "layout", "barTexture")
+    GT.Fire("SettingChanged", "style", "barTexture")
+end)
+
+-- one time: colors, font and bar texture moved to General (shared by party and
+-- raid). Keep what you had on your party frames.
+GT.On("Login", function()
+    local G = GT.db and GT.db.general
+    if not G or G.sharedStyle1 then return end
+    G.sharedStyle1 = true
+    local from = GT.db.layouts.party and GT.db.layouts.party.look or {}
+    for k in pairs(GT.STYLE_KEYS) do
+        local v = from[k]
+        if v ~= nil then GT.db.style[k] = type(v) == "table" and CopyDefaults(v, {}) or v end
+    end
+    GT.ApplyFonts()
+    GT.Fire("SettingChanged", "style", "barTexture")
 end)
 

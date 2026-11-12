@@ -570,7 +570,7 @@ GT.On("SettingChanged", function(section, key)
         if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
         return
     end
-    if section == "layout" and (key == "targetColor" or key == "healthTextColor" or key == "borderColor") then
+    if section == "style" and (key == "targetColor" or key == "healthTextColor" or key == "borderColor") then
         local look = GT.Look()
         for b in pairs(GT.buttons) do
             if key == "borderColor" then
@@ -586,7 +586,7 @@ GT.On("SettingChanged", function(section, key)
         if GT.testMode and not InCombatLockdown() then GT.RefreshTestMode() end
         return
     end
-    if section == "layout" and (key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor" or key == "nameCustomColor") then
+    if section == "style" and (key == "barTexture" or key == "barColor" or key == "lossColor" or key == "classBG" or key == "matchEUI" or key == "healthColor" or key == "nameColor" or key == "nameCustomColor") then
         for b in pairs(GT.buttons) do
             if key == "barTexture" then GT.ApplyBarTexture(b) end
             if b.unit then GT.UpdateColor(b) end

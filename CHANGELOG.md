@@ -1,7 +1,11 @@
 # Gram Frames changelog
 
+## 2.2.5
+- Colors, font and bar texture moved to the **General** page. Set them once and they're used by party and raid frames. Your party frame colors carry over.
+- My Target Color and My Target Thickness are on the General page too.
+
 ## 2.2.4
-- The box around the person you have targeted is gold now instead of white. Pick any color and thickness under Icons → My Target Color / My Target Thickness.
+- The box around the person you have targeted is gold now instead of white. Pick any color and thickness under My Target Color / My Target Thickness.
 - Aggro is always bright red: the border and the AGGRO / LOSING / YOU label.
 - **AFK** shows on the frame with a minute timer (AFK 3m). **OFFLINE** shows its minutes too (OFFLINE 12m). Turn AFK off under Icons → Show AFK.
 - More color pickers: Name Color → Pick a color, Health Text Color, and Border Color.
