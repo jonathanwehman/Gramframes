@@ -3,19 +3,21 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.7"
+GT.version = "2.2.8"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
 
 -------------------------------------------------------------------------------
--- Fonts. Built-ins always exist; Expressway needs the .ttf on disk, so we look
--- in our own Media\Fonts folder first, then the places other addons keep it.
+-- Fonts. Built-ins always exist. "Expressway" (the default) is found on its own,
+-- no setup for anyone:
+--   1. Expressway from any addon that has it (LibSharedMedia, EllesmereUI, ElvUI)
+--   2. otherwise EllesmereUI's own font, if EllesmereUI is installed
+--   3. otherwise Arial Narrow (always there)
+-- Expressway is a paid font, so Gram Frames never ships it.
 -------------------------------------------------------------------------------
-local ADDON_FONTS = "Interface\\AddOns\\" .. ADDON .. "\\Media\\Fonts\\"
 GT.fontChoices = {
     { "Expressway", "Expressway", {
-        ADDON_FONTS .. "Expressway.ttf",
         "Interface\\AddOns\\EllesmereUI\\media\\fonts\\Expressway.TTF",
         "Interface\\AddOns\\ElvUI\\Core\\Media\\Fonts\\Expressway.ttf",
         "Interface\\AddOns\\ElvUI\\Media\\Fonts\\Expressway.ttf",
@@ -38,10 +40,6 @@ local function CanLoad(path)
     return fs:GetFont() ~= nil
 end
 
--- Only probe a file if it can be there: another addon's folder only when that
--- addon is loaded, and our own Media\Fonts only until it has failed once.
--- (The client reports a missing font file as an error even inside pcall, so a
--- blind probe shows up in BugSack on every login for anyone without the font.)
 local function AddonOf(path)
     return path:match("^Interface\\AddOns\\([^\\]+)\\")
 end
@@ -51,45 +49,75 @@ local function AddonLoaded(name)
     local ok, loaded = pcall(f, name)
     return ok and loaded and true or false
 end
+local function LSM() return LibStub and LibStub("LibSharedMedia-3.0", true) end
+
+-- The client logs a missing font file as an error even inside pcall, so a file
+-- path is only tried if its addon is loaded, and never again once it failed.
+local function TryPath(path)
+    local owner = AddonOf(path)
+    if owner and not AddonLoaded(owner) then return nil end
+    local bad = GT.db and GT.db.general
+    if bad then
+        bad.badFonts = bad.badFonts or {}
+        if bad.badFonts[path] then return nil end
+    elseif owner then
+        return nil -- settings not loaded yet: wait rather than risk an error
+    end
+    if CanLoad(path) then return path end
+    if bad then bad.badFonts[path] = true end
+    return nil
+end
+
+local function FindExpressway(paths)
+    local lsm = LSM()
+    local p = lsm and lsm:Fetch("font", "Expressway", true)
+    if p then return p end
+    for _, path in ipairs(paths) do
+        p = TryPath(path)
+        if p then return p end
+    end
+    -- EllesmereUI's own font, through what it registered with LibSharedMedia
+    if lsm and AddonLoaded("EllesmereUI") then
+        local names = {}
+        for name, path in pairs(lsm:HashTable("font")) do
+            if type(path) == "string" and path:lower():find("\\ellesmereui", 1, true) then
+                names[#names + 1] = name
+            end
+        end
+        table.sort(names)
+        for _, name in ipairs(names) do
+            p = lsm:Fetch("font", name, true)
+            if p then return p end
+        end
+    end
+    return nil
+end
 
 local resolved = {}
 function GT.ResolveFont(key)
-    if resolved[key] ~= nil then return resolved[key] end
-    local found, ownPath = false, nil
+    if resolved[key] then return resolved[key] end
+    local found
     for _, choice in ipairs(GT.fontChoices) do
         if choice[1] == key then
-            for _, path in ipairs(choice[3]) do
-                local owner = AddonOf(path)
-                if owner == ADDON then
-                    ownPath = path               -- try last
-                elseif (not owner or AddonLoaded(owner)) and CanLoad(path) then
-                    found = path break
+            if key == "Expressway" then
+                found = FindExpressway(choice[3])
+            else
+                for _, path in ipairs(choice[3]) do
+                    found = TryPath(path)
+                    if found then break end
                 end
             end
         end
     end
     -- fonts registered by other addons through LibSharedMedia
-    if not found and LibStub then
-        local LSM = LibStub("LibSharedMedia-3.0", true)
-        local path = LSM and LSM:Fetch("font", key, true)
-        if path and CanLoad(path) then found = path end
+    if not found then
+        local lsm = LSM()
+        found = lsm and lsm:Fetch("font", key, true) or nil
     end
-    -- our own Media\Fonts folder, unless we already know it isn't there
-    if not found and ownPath then
-        if not GT.db then return false end      -- settings not loaded yet: don't guess, don't cache
-        local g = GT.db.general
-        if not g.noLocalFont then
-            if CanLoad(ownPath) then found = ownPath else g.noLocalFont = true end
-        end
-    end
-    resolved[key] = found
+    -- only remember a success; a miss is tried again later (another addon may
+    -- not have registered its fonts yet)
+    if found then resolved[key] = found end
     return found
-end
-
--- picking a font again re-checks Media\Fonts (after you've added the file)
-function GT.ResetFontCheck()
-    wipe(resolved)
-    if GT.db and GT.db.general then GT.db.general.noLocalFont = nil end
 end
 
 -- dropdown list: our choices + anything LibSharedMedia knows about
@@ -168,18 +196,9 @@ function GT.GetBarTexture()
     return path or "Interface\\Buttons\\WHITE8X8"
 end
 
-local warnedMissing
 function GT.GetFont()
     local key = GT.db and GT.Look().font or "Expressway"
-    local path = GT.ResolveFont(key)
-    if not path then
-        if GT.db and not warnedMissing and key == "Expressway" then
-            warnedMissing = true
-            GT.Print("Expressway font not found, using Arial Narrow. To use it, put Expressway.ttf in Interface\\AddOns\\GramFrames\\Media\\Fonts\\, fully restart WoW, then pick Expressway again under /gf > General > Font.")
-        end
-        return GT.FONT
-    end
-    return path
+    return GT.ResolveFont(key) or GT.FONT
 end
 
 -- Every font in the addon goes through here so a font change can redo them all.
@@ -630,8 +649,10 @@ function GramFrames_OnAddonCompartmentClick()
     GT.ToggleOptions()
 end
 
+-- by login every addon has loaded and shared its fonts: pick the font again
+GT.On("Login", function() GT.ApplyFonts() end)
+
 GT.On("SettingChanged", function(section, key)
-    if key == "font" then GT.ResetFontCheck() end
     if key == "font" or section == "all" then GT.ApplyFonts() end
 end)
 

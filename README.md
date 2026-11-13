@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.2.7 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.2.8 (beta)** · Interface 16001 · type `/gf` in game
 
 What's new: see the [changelog](CHANGELOG.md).
 
@@ -75,7 +75,7 @@ Each frame only listens for updates about its own player, and one shared timer h
 
 ## Font
 
-Gram Frames uses the **Expressway** font if you already have it installed (for example through EllesmereUI). It isn't included here because it's a paid font; without it the frames use the default game font.
+Nothing to set up. Gram Frames uses the **Expressway** font if another addon has it (EllesmereUI, ElvUI, or SharedMedia). If not, it uses EllesmereUI's own font when EllesmereUI is installed. Otherwise it uses Arial Narrow. Expressway is a paid font, so it isn't included here.
 
 ## Bugs
 

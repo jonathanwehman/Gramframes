@@ -1,5 +1,9 @@
 # Gram Frames changelog
 
+## 2.2.8
+- The font sorts itself out, with no setup: Expressway if another addon has it (EllesmereUI, ElvUI, SharedMedia), otherwise EllesmereUI's font, otherwise Arial Narrow.
+- No more chat message or BugSack error about a missing font.
+
 ## 2.2.7
 - Fixed a BugSack error about Expressway.ttf when the font isn't installed. Gram Frames now uses Expressway from EllesmereUI or ElvUI first, and only checks its own Media\Fonts folder once.
 
