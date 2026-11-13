@@ -1,5 +1,8 @@
 # Gram Frames changelog
 
+## 2.2.7
+- Fixed a BugSack error about Expressway.ttf when the font isn't installed. Gram Frames now uses Expressway from EllesmereUI or ElvUI first, and only checks its own Media\Fonts folder once.
+
 ## 2.2.6
 - When a tank is **LOSING** aggro, a red glow now pulses around their frame so you can't miss it.
 - Main picture: the party row shows AFK too.

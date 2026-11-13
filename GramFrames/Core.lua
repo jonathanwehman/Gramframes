@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.6"
+GT.version = "2.2.7"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -38,24 +38,58 @@ local function CanLoad(path)
     return fs:GetFont() ~= nil
 end
 
+-- Only probe a file if it can be there: another addon's folder only when that
+-- addon is loaded, and our own Media\Fonts only until it has failed once.
+-- (The client reports a missing font file as an error even inside pcall, so a
+-- blind probe shows up in BugSack on every login for anyone without the font.)
+local function AddonOf(path)
+    return path:match("^Interface\\AddOns\\([^\\]+)\\")
+end
+local function AddonLoaded(name)
+    local f = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
+    if not f then return false end
+    local ok, loaded = pcall(f, name)
+    return ok and loaded and true or false
+end
+
 local resolved = {}
 function GT.ResolveFont(key)
     if resolved[key] ~= nil then return resolved[key] end
-    resolved[key] = false
+    local found, ownPath = false, nil
     for _, choice in ipairs(GT.fontChoices) do
         if choice[1] == key then
             for _, path in ipairs(choice[3]) do
-                if CanLoad(path) then resolved[key] = path break end
+                local owner = AddonOf(path)
+                if owner == ADDON then
+                    ownPath = path               -- try last
+                elseif (not owner or AddonLoaded(owner)) and CanLoad(path) then
+                    found = path break
+                end
             end
         end
     end
     -- fonts registered by other addons through LibSharedMedia
-    if not resolved[key] and LibStub then
+    if not found and LibStub then
         local LSM = LibStub("LibSharedMedia-3.0", true)
         local path = LSM and LSM:Fetch("font", key, true)
-        if path and CanLoad(path) then resolved[key] = path end
+        if path and CanLoad(path) then found = path end
     end
-    return resolved[key]
+    -- our own Media\Fonts folder, unless we already know it isn't there
+    if not found and ownPath then
+        if not GT.db then return false end      -- settings not loaded yet: don't guess, don't cache
+        local g = GT.db.general
+        if not g.noLocalFont then
+            if CanLoad(ownPath) then found = ownPath else g.noLocalFont = true end
+        end
+    end
+    resolved[key] = found
+    return found
+end
+
+-- picking a font again re-checks Media\Fonts (after you've added the file)
+function GT.ResetFontCheck()
+    wipe(resolved)
+    if GT.db and GT.db.general then GT.db.general.noLocalFont = nil end
 end
 
 -- dropdown list: our choices + anything LibSharedMedia knows about
@@ -141,7 +175,7 @@ function GT.GetFont()
     if not path then
         if GT.db and not warnedMissing and key == "Expressway" then
             warnedMissing = true
-            GT.Print("Expressway.ttf not found - put it in Interface\\AddOns\\GramFrames\\Media\\Fonts\\ and fully restart WoW. Using Arial Narrow for now.")
+            GT.Print("Expressway font not found, using Arial Narrow. To use it, put Expressway.ttf in Interface\\AddOns\\GramFrames\\Media\\Fonts\\, fully restart WoW, then pick Expressway again under /gf > General > Font.")
         end
         return GT.FONT
     end
@@ -597,6 +631,7 @@ function GramFrames_OnAddonCompartmentClick()
 end
 
 GT.On("SettingChanged", function(section, key)
+    if key == "font" then GT.ResetFontCheck() end
     if key == "font" or section == "all" then GT.ApplyFonts() end
 end)
 
