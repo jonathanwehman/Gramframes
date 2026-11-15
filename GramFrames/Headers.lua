@@ -389,15 +389,17 @@ local function FillFake(b, i)
     local deb, buf = GT.Debuffs(), GT.Buffs()
     local DEB_ICONS = { 136118, 136207, 135813 }   -- curse, shadow word: pain, fire
     local BUFF_ICONS = { 135953, 136081, 135907 }  -- renew, rejuv, flash heal
-    local nDeb = ({ [2] = 1, [3] = 2, [5] = 3, [7] = 1, [9] = 2 })[(i - 1) % 10 + 1] or 0
+    local nDeb = ({ [2] = 1, [3] = 2, [4] = 1, [5] = 3, [7] = 1, [9] = 2 })[(i - 1) % 10 + 1] or 0
     local nBuff = ({ [1] = 2, [2] = 1, [4] = 3, [6] = 1, [8] = 2 })[(i - 1) % 10 + 1] or 0
-    -- preview: frame 2 has a curse (purple bar), frame 3 a poison (green bar)
+    -- preview: frame 2 has a curse (purple bar), 3 a poison (green), 4 a disease (brown)
     local slot = (i - 1) % 10 + 1
-    local dtype = (slot == 2 and "Curse") or (slot == 3 and "Poison") or nil
+    local dtype = (slot == 2 and "Curse") or (slot == 3 and "Poison") or (slot == 4 and "Disease") or nil
+    local DTYPE_ICONS = { Poison = "Interface\\Icons\\Spell_Nature_CorrosiveBreath",
+        Disease = "Interface\\Icons\\Ability_Creature_Disease_02" }
     if deb.enabled then
         for k = 1, math.min(nDeb, deb.max) do
             local ic = b.debuffs[k]
-            ic.icon:SetTexture((k == 1 and dtype == "Poison") and "Interface\\Icons\\Spell_Nature_CorrosiveBreath" or DEB_ICONS[k])
+            ic.icon:SetTexture((k == 1 and dtype and DTYPE_ICONS[dtype]) or DEB_ICONS[k])
             if k == 1 and deb.dispelBorder then
                 local dc = dtype and GT.DISPEL_BAR_COLORS[dtype] or { 0.2, 0.6, 1 }
                 ic.border:SetVertexColor(dc[1], dc[2], dc[3], 1)

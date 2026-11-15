@@ -961,7 +961,7 @@ local DISPEL_COLORS = {
 -------------------------------------------------------------------------------
 local BAR_DISPEL_COLORS = {
     Curse = { 0.64, 0.20, 0.95 }, Poison = { 0.12, 0.78, 0.18 },
-    Magic = { 0.22, 0.55, 1.00 }, Disease = { 0.72, 0.50, 0.12 },
+    Magic = { 0.22, 0.55, 1.00 }, Disease = { 0.55, 0.35, 0.10 },
 }
 GT.DISPEL_BAR_COLORS = BAR_DISPEL_COLORS
 local DISPEL_GENERIC = { 0.85, 0.30, 1.00 }

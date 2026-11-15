@@ -1,5 +1,10 @@
 # Gram Frames changelog
 
+## 2.2.10
+- Disease is now a darker brown, so it's easy to tell apart from the debuff icons.
+- Test mode shows all three: a cursed (purple), a poisoned (green) and a diseased (brown) frame.
+- Main picture shows curse, poison and disease bars, plus healer mana.
+
 ## 2.2.9
 - When someone has a curse, poison, magic or disease you can remove, their health bar turns that color: **purple** for curse, **green** for poison, blue for magic, brown for disease. The debuff icon still shows.
 - New options on the Layout page under Debuffs: **Color Bar (Curse, Poison, Magic)** and **Only Ones I Can Remove** (turn that off to color the bar for every curse/poison, even if you can't cleanse it).
