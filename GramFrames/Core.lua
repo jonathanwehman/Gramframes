@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.8"
+GT.version = "2.2.9"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -265,6 +265,8 @@ local VIEW_DEFAULTS = {
         size = 16,
         max = 3,
         dispelBorder = true,
+        dispelBar = true,           -- health bar turns purple (curse), green (poison)...
+        dispelMine = true,          -- only for debuffs you can remove
     },
 }
 

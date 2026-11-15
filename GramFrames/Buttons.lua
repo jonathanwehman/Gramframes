@@ -197,6 +197,16 @@ function GT.BuildVisuals(b, kind)
     b.highlight:SetVertexColor(1, 1, 1, 0.08)
     b.highlight:Hide()
 
+    -- dispel color: the bar turns the debuff's color (purple curse, green poison...).
+    -- fill tint sits on the health part, a lighter wash covers the missing part.
+    b.dispelBG = b.health:CreateTexture(nil, "OVERLAY", nil, -2)
+    b.dispelBG:SetTexture(FLAT)
+    b.dispelBG:SetAllPoints(b.health)
+    b.dispelBG:Hide()
+    b.dispelFill = b.health:CreateTexture(nil, "OVERLAY", nil, -1)
+    b.dispelFill:SetTexture(FLAT)
+    b.dispelFill:Hide()
+
     b.debuffs = {}
     b.buffs = {}
     local function AuraIcon()
@@ -250,6 +260,18 @@ function GT.ApplyBarTexture(b)
     b.healthBG:SetTexture(tex)
     b.power:SetStatusBarTexture(tex)
     b.powerBG:SetTexture(tex)
+    -- dispel tint follows the health fill and uses the same texture
+    if b.dispelFill then
+        local fill = b.health:GetStatusBarTexture()
+        b.dispelFill:SetTexture(tex)
+        b.dispelFill:ClearAllPoints()
+        if fill then
+            b.dispelFill:SetPoint("TOPLEFT", fill, "TOPLEFT")
+            b.dispelFill:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT")
+        else
+            b.dispelFill:SetAllPoints(b.health)
+        end
+    end
 end
 
 function GT.ApplyLook(b)
@@ -584,6 +606,7 @@ function GT.UpdateStatus(b)
         b.status:Hide()
     end
     if not b.isOffline and not b.isAFK and b.kind ~= "fake" and b.kind ~= "target" then ClearAway(u) end
+    if (b.isDead or b.isOffline) and b.dispelFill then b.dispelFill:Hide(); b.dispelBG:Hide() end
 end
 
 local POWER_COLORS = {
@@ -931,6 +954,104 @@ local DISPEL_COLORS = {
     Poison = { 0.0, 0.6, 0.0 },
 }
 
+-------------------------------------------------------------------------------
+-- Dispel bar color: when someone has a curse / poison / magic / disease, their
+-- health bar turns that color. In combat the debuff type can be hidden from
+-- Lua, so the client turns it into a color for us through a curve.
+-------------------------------------------------------------------------------
+local BAR_DISPEL_COLORS = {
+    Curse = { 0.64, 0.20, 0.95 }, Poison = { 0.12, 0.78, 0.18 },
+    Magic = { 0.22, 0.55, 1.00 }, Disease = { 0.72, 0.50, 0.12 },
+}
+GT.DISPEL_BAR_COLORS = BAR_DISPEL_COLORS
+local DISPEL_GENERIC = { 0.85, 0.30, 1.00 }
+local DISPEL_TYPE_IDS = { Magic = 1, Curse = 2, Disease = 3, Poison = 4 }
+local BG_ALPHA = 0.35
+
+local dispelCurves = {}
+local function DispelCurve(alpha)
+    if dispelCurves[alpha] ~= nil then return dispelCurves[alpha] end
+    dispelCurves[alpha] = false
+    if not (C_CurveUtil and C_CurveUtil.CreateColorCurve and CreateColor) then return false end
+    local ok, c = pcall(C_CurveUtil.CreateColorCurve)
+    if not ok or not c then return false end
+    if Enum and Enum.LuaCurveType and Enum.LuaCurveType.Step and c.SetType then
+        pcall(c.SetType, c, Enum.LuaCurveType.Step)
+    end
+    pcall(c.AddPoint, c, 0, CreateColor(0, 0, 0, 0))            -- no type: invisible
+    for name, id in pairs(DISPEL_TYPE_IDS) do
+        local col = BAR_DISPEL_COLORS[name]
+        pcall(c.AddPoint, c, id, CreateColor(col[1], col[2], col[3], alpha))
+    end
+    pcall(c.AddPoint, c, 5, CreateColor(0, 0, 0, 0))            -- enrage, bleed...: invisible
+    dispelCurves[alpha] = c
+    return c
+end
+
+-- first curse/poison/magic/disease on the unit. mineOnly: only ones you can remove.
+-- returns aura, typeName (typeName is nil when the game hides it)
+local function FindDispel(u, mineOnly)
+    if not (C_UnitAuras and C_UnitAuras.GetAuraSlots and C_UnitAuras.GetAuraDataBySlot) then return nil end
+    local filter = mineOnly and "HARMFUL|RAID_PLAYER_DISPELLABLE" or "HARMFUL"
+    local res = { pcall(C_UnitAuras.GetAuraSlots, u, filter, 8) }
+    if not res[1] then return nil end
+    local hidden
+    for i = 3, #res do -- res[2] is the continuation token
+        local ok, aura = pcall(C_UnitAuras.GetAuraDataBySlot, u, res[i])
+        if ok and aura then
+            local dn = aura.dispelName
+            local name = Str(dn)
+            if name and BAR_DISPEL_COLORS[name] then return aura, name end
+            if not hidden and (mineOnly or IsSecret(dn)) then hidden = aura end
+        end
+    end
+    return hidden, nil
+end
+
+local function HideDispel(b)
+    b.dispelFill:Hide(); b.dispelBG:Hide()
+end
+
+function GT.UpdateDispelTint(b)
+    if not b.dispelFill then return end
+    local deb = GT.Debuffs()
+    local u = b.unit
+    if b.kind == "target" or b.kind == "fake" or deb.dispelBar == false or not u or b.isDead or b.isOffline then
+        HideDispel(b); return
+    end
+    local mineOnly = deb.dispelMine ~= false
+    local aura, name = FindDispel(u, mineOnly)
+    if not aura then HideDispel(b); return end
+    local f, bg = b.dispelFill, b.dispelBG
+    if name then
+        local c = BAR_DISPEL_COLORS[name]
+        f:SetVertexColor(c[1], c[2], c[3], 1)
+        bg:SetVertexColor(c[1], c[2], c[3], BG_ALPHA)
+    else
+        -- type is hidden: the client picks the color from the curve
+        local done = false
+        local id = aura.auraInstanceID
+        local c1, c2 = DispelCurve(1), DispelCurve(BG_ALPHA)
+        if C_UnitAuras.GetAuraDispelTypeColor and not rawequal(id, nil) and c1 and c2 then
+            local col1 = Call(C_UnitAuras.GetAuraDispelTypeColor, u, id, c1)
+            local col2 = Call(C_UnitAuras.GetAuraDispelTypeColor, u, id, c2)
+            if not rawequal(col1, nil) and not rawequal(col2, nil)
+                and pcall(function() f:SetVertexColor(col1:GetRGBA()) end)
+                and pcall(function() bg:SetVertexColor(col2:GetRGBA()) end) then
+                done = true
+            end
+        end
+        if not done then
+            -- can't tell the type: only color it if we know you can remove it
+            if not mineOnly then HideDispel(b); return end
+            local c = DISPEL_GENERIC
+            f:SetVertexColor(c[1], c[2], c[3], 1)
+            bg:SetVertexColor(c[1], c[2], c[3], BG_ALPHA)
+        end
+    end
+    f:Show(); bg:Show()
+end
+
 local function ShowDebuff(d, unit, aura, showDispel)
     d.icon:SetTexture(aura.icon)
     -- border: dispellable debuffs get colored
@@ -1106,6 +1227,7 @@ function GT.UpdateDebuffs(b)
     local u = b.unit
     for _, d in ipairs(b.debuffs) do d:Hide() end
     if b.kind == "target" then return end
+    if not pcall(GT.UpdateDispelTint, b) and b.dispelFill then HideDispel(b) end
     if NativeDebuffs(b, deb) then return end
     if not deb.enabled or not u then return end
     if b.fakeDebuffs then

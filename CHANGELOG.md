@@ -1,5 +1,10 @@
 # Gram Frames changelog
 
+## 2.2.9
+- When someone has a curse, poison, magic or disease you can remove, their health bar turns that color: **purple** for curse, **green** for poison, blue for magic, brown for disease. The debuff icon still shows.
+- New options on the Layout page under Debuffs: **Color Bar (Curse, Poison, Magic)** and **Only Ones I Can Remove** (turn that off to color the bar for every curse/poison, even if you can't cleanse it).
+- Test mode shows a cursed (purple) and a poisoned (green) frame.
+
 ## 2.2.8
 - The font sorts itself out, with no setup: Expressway if another addon has it (EllesmereUI, ElvUI, SharedMedia), otherwise EllesmereUI's font, otherwise Arial Narrow.
 - No more chat message or BugSack error about a missing font.

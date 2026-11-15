@@ -391,12 +391,29 @@ local function FillFake(b, i)
     local BUFF_ICONS = { 135953, 136081, 135907 }  -- renew, rejuv, flash heal
     local nDeb = ({ [2] = 1, [3] = 2, [5] = 3, [7] = 1, [9] = 2 })[(i - 1) % 10 + 1] or 0
     local nBuff = ({ [1] = 2, [2] = 1, [4] = 3, [6] = 1, [8] = 2 })[(i - 1) % 10 + 1] or 0
+    -- preview: frame 2 has a curse (purple bar), frame 3 a poison (green bar)
+    local slot = (i - 1) % 10 + 1
+    local dtype = (slot == 2 and "Curse") or (slot == 3 and "Poison") or nil
     if deb.enabled then
         for k = 1, math.min(nDeb, deb.max) do
             local ic = b.debuffs[k]
-            ic.icon:SetTexture(DEB_ICONS[k])
-            if k == 1 and deb.dispelBorder then ic.border:SetVertexColor(0.2, 0.6, 1, 1) else ic.border:SetVertexColor(0, 0, 0, 1) end
+            ic.icon:SetTexture((k == 1 and dtype == "Poison") and "Interface\\Icons\\Spell_Nature_CorrosiveBreath" or DEB_ICONS[k])
+            if k == 1 and deb.dispelBorder then
+                local dc = dtype and GT.DISPEL_BAR_COLORS[dtype] or { 0.2, 0.6, 1 }
+                ic.border:SetVertexColor(dc[1], dc[2], dc[3], 1)
+            else
+                ic.border:SetVertexColor(0, 0, 0, 1)
+            end
             ic.count:SetText(k == 2 and "3" or ""); ic.cd:Hide(); ic:Show()
+        end
+    end
+    if b.dispelFill then
+        local dc = dtype and deb.enabled and nDeb > 0 and deb.dispelBar ~= false and hp > 0 and GT.DISPEL_BAR_COLORS[dtype]
+        if dc then
+            b.dispelFill:SetVertexColor(dc[1], dc[2], dc[3], 1); b.dispelFill:Show()
+            b.dispelBG:SetVertexColor(dc[1], dc[2], dc[3], 0.35); b.dispelBG:Show()
+        else
+            b.dispelFill:Hide(); b.dispelBG:Hide()
         end
     end
     if buf.enabled then

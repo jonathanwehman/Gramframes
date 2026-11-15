@@ -95,6 +95,8 @@ local function FrameSections(kind)
         { title = "Debuffs", rows = {
             { "toggle", "Show Debuffs", "layout.debuffs.enabled" },
             { "toggle", "Color Dispellable", "layout.debuffs.dispelBorder" },
+            { "toggle", "Color Bar (Curse, Poison, Magic)", "layout.debuffs.dispelBar" },
+            { "toggle", "Only Ones I Can Remove", "layout.debuffs.dispelMine", cond = function() return GT.Get("layout.debuffs.dispelBar") ~= false end },
             { "slider", "Debuff Size", "layout.debuffs.size", 8, 30, 1 },
             { "slider", "Max Debuffs", "layout.debuffs.max", 1, 6, 1 },
         } },

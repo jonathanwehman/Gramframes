@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.2.8 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.2.9 (beta)** · Interface 16001 · type `/gf` in game
 
 What's new: see the [changelog](CHANGELOG.md).
 
@@ -47,7 +47,8 @@ What's new: see the [changelog](CHANGELOG.md).
 
 ### Buffs and debuffs
 - Your HoTs and buffs top right, debuffs bottom left
-- Blue edge on debuffs you can dispel, stack counts shown
+- Health bar turns purple (curse), green (poison), blue (magic) or brown (disease) when you can remove it
+- Colored edge on debuffs you can dispel, stack counts shown
 - Uses Forever's built-in aura display, so it keeps working in dungeons and combat
 
 ### Tank tools
