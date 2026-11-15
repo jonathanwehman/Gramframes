@@ -460,6 +460,52 @@ function GT.UpdateMoverLabel()
     GT.movers.main.text:SetText((GT.testMode and "Preview: " or "Gram Frames - ") .. (MOVER_NAMES[key] or key))
 end
 
+-- color key under the preview: which bar color means which debuff
+local KEY_TYPES = { "Curse", "Poison", "Disease", "Magic" }
+function GT.UpdateTestColorKey(holder, bottom)
+    local key = GT.testColorKey
+    if not key then
+        key = CreateFrame("Frame", nil, holder)
+        key:SetSize(1, 1)
+        key.title = key:CreateFontString(nil, "OVERLAY")
+        key.title:SetPoint("TOPLEFT", key, "TOPLEFT", 0, 0)
+        key.items = {}
+        local prev = key.title
+        for _, t in ipairs(KEY_TYPES) do
+            local edge = key:CreateTexture(nil, "BORDER")
+            edge:SetTexture(GT.FLAT)
+            edge:SetVertexColor(0, 0, 0, 1)
+            edge:SetSize(12, 12)
+            edge:SetPoint("LEFT", prev, "RIGHT", 8, 0)
+            local sw = key:CreateTexture(nil, "ARTWORK")
+            sw:SetTexture(GT.FLAT)
+            sw:SetPoint("TOPLEFT", edge, "TOPLEFT", 1, -1)
+            sw:SetPoint("BOTTOMRIGHT", edge, "BOTTOMRIGHT", -1, 1)
+            local fs = key:CreateFontString(nil, "OVERLAY")
+            fs:SetPoint("LEFT", edge, "RIGHT", 4, 0)
+            key.items[#key.items + 1] = { sw = sw, fs = fs, t = t }
+            prev = fs
+        end
+        GT.testColorKey = key
+    end
+    key:SetParent(holder)
+    key:ClearAllPoints()
+    key:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, -(bottom + 6))
+    GT.SetFont(key.title, 11, "OUTLINE")
+    key.title:SetTextColor(1, 0.55, 0.77)
+    key.title:SetText("Bar colors:")
+    local colors = GT.DISPEL_BAR_COLORS or {}
+    for _, it in ipairs(key.items) do
+        local c = colors[it.t] or { 1, 1, 1 }
+        it.sw:SetVertexColor(c[1], c[2], c[3], 1)
+        GT.SetFont(it.fs, 11, "OUTLINE")
+        it.fs:SetTextColor(0.9, 0.9, 0.92)
+        it.fs:SetText(it.t)
+    end
+    local deb = GT.Debuffs()
+    key:SetShown(deb.enabled and deb.dispelBar ~= false)
+end
+
 -- test mode previews the layout you're editing in the options
 function GT.RefreshTestMode()
     local key = GT.db.general.editLayout
@@ -478,6 +524,7 @@ function GT.RefreshTestMode()
     local skip = (key == "party" and L.showPlayer == false) and 1 or 0
     n = n - skip
     local cols = L.direction == "COLUMNS"
+    local maxBottom = 0
     for i = 1, 40 do
         local b = fakes[i]
         if i <= n then
@@ -495,17 +542,23 @@ function GT.RefreshTestMode()
                 group, slot = math.floor((i - 1) / L.unitsPerColumn), (i - 1) % L.unitsPerColumn
             end
             b:ClearAllPoints()
+            local dy
             if cols then
-                b:SetPoint("TOPLEFT", holder, "TOPLEFT", group * (L.width + L.groupSpacing), -slot * (L.height + L.spacing))
+                dy = slot * (L.height + L.spacing)
+                b:SetPoint("TOPLEFT", holder, "TOPLEFT", group * (L.width + L.groupSpacing), -dy)
             else
-                b:SetPoint("TOPLEFT", holder, "TOPLEFT", slot * (L.width + L.spacing), -group * (L.height + L.groupSpacing))
+                dy = group * (L.height + L.groupSpacing)
+                b:SetPoint("TOPLEFT", holder, "TOPLEFT", slot * (L.width + L.spacing), -dy)
             end
+            maxBottom = math.max(maxBottom, dy + L.height)
             b:Show()
             FillFake(b, i + skip)
         elseif b then
             b:Hide()
         end
     end
+
+    GT.UpdateTestColorKey(holder, maxBottom)
 
     local th = GT.testTankHolder
     if not th then th = CreateFrame("Frame", nil, UIParent); GT.testTankHolder = th end

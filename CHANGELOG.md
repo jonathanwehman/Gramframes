@@ -1,5 +1,8 @@
 # Gram Frames changelog
 
+## 2.2.11
+- Test mode shows a color key under the frames: purple = Curse, green = Poison, brown = Disease, blue = Magic.
+
 ## 2.2.10
 - Disease is now a darker brown, so it's easy to tell apart from the debuff icons.
 - Test mode shows all three: a cursed (purple), a poisoned (green) and a diseased (brown) frame.
