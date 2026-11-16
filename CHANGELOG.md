@@ -1,5 +1,9 @@
 # Gram Frames changelog
 
+## 2.2.14
+- New **Frame Skin** option on the General page: **Gram** (the dark look, your own colors) or **Blizzard** (Blizzard's raid bar texture, class colors, Friz Quadrata font, name in the top-left like the default raid frames).
+- Your own colors, font and texture are kept, so switching back to Gram brings them back.
+
 ## 2.2.13
 - Click-casting can be turned off: **Click-Casting → Use Click-Casting**. When it's off, left click targets and right click opens the menu.
 - New **Mouseover Macros** page: makes a macro for each of your class's heals, buffs and cures that casts on whoever your mouse is over. Click **Make** to put one on your cursor and drop it on an action bar, or **Make All Class Spells** to make them all (then /macro to drag them).

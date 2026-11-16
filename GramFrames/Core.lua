@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.13"
+GT.version = "2.2.14"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -312,6 +312,7 @@ GT.LAYOUTS = { { "party", "Solo / Party" }, { "raid10", "10-man Raid" }, { "raid
 
 -- colors, font and bar texture: one set for party and raid alike (General page)
 local STYLE_DEFAULTS = {
+    skin = "GRAM",              -- GRAM = our dark look | BLIZZARD = Blizzard's raid frame look
     font = "Expressway",
     healthColor = "DARK",       -- DARK | CLASS | CLASSDARK | GRADIENT | CUSTOM
     barColor = { 0.067, 0.067, 0.067, 0.9 }, -- dark mode health (#111111 @ 90%)
@@ -484,9 +485,28 @@ local function View() return GT.db.layouts[GT.ViewKey()] or GT.db.layouts.party 
 -- GT.Look(): the on-screen layout's look, with the shared style (colors, font,
 -- texture) read from GT.db.style. Read-only: change settings with GT.Set.
 local STYLE_KEYS = GT.STYLE_KEYS
+-- "Blizzard" skin: Blizzard's raid-frame texture, class colors and font. Your own
+-- colors stay saved underneath and come back when you switch to the Gram skin.
+GT.BLIZZARD_SKIN = {
+    font = "Friz",
+    barTexture = "BlizzardRaid",
+    healthColor = "CLASS",
+    classBG = false,
+    lossColor = { 0.08, 0.08, 0.08 },
+    matchEUI = false,
+    nameColor = "WHITE",
+    borderColor = { 0.22, 0.22, 0.22 },
+    bgAlpha = 1,
+}
+local BLIZ = GT.BLIZZARD_SKIN
+function GT.IsBlizzardSkin() return GT.db and GT.db.style.skin == "BLIZZARD" end
 local lookProxy = setmetatable({}, {
     __index = function(_, k)
-        if STYLE_KEYS[k] then return GT.db.style[k] end
+        if STYLE_KEYS[k] then
+            local st = GT.db.style
+            if st.skin == "BLIZZARD" and BLIZ[k] ~= nil then return BLIZ[k] end
+            return st[k]
+        end
         return View().look[k]
     end,
     __newindex = function() error("GramFrames: use GT.Set to change settings") end,
@@ -657,7 +677,7 @@ end
 GT.On("Login", function() GT.ApplyFonts() end)
 
 GT.On("SettingChanged", function(section, key)
-    if key == "font" or section == "all" then GT.ApplyFonts() end
+    if key == "font" or key == "skin" or section == "all" then GT.ApplyFonts() end
 end)
 
 -- one time: dark mode = dark health over light-grey missing health (EllesmereUI's look),

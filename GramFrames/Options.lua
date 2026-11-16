@@ -13,6 +13,8 @@ local yes = function() return true end
 local isCombined = function() return GT.Get("layout.groupMode") == "COMBINED" end
 local isSolid = function() local m = GT.Get("style.healthColor"); return m == "DARK" or m == "CUSTOM" end
 local notSolid = function() return not isSolid() end
+local isBliz = function() return GT.Get("style.skin") == "BLIZZARD" end
+local notBliz = function() return not isBliz() end
 local showBG = function() return isSolid() or GT.Get("style.classBG") == false end
 
 -- the settings every frame type has; Party Frames and Raid Frames each get their own copy
@@ -212,29 +214,33 @@ local pages = {
     { key = "general", group = "Setup", title = "General", icon = "Interface\\Icons\\INV_Misc_Gear_01",
       desc = "Colors, font and bar texture for party and raid, plus lock, minimap and reset. /gf opens this window.",
       sections = {
+        { title = "Skin", rows = {
+            { "dropdown", "Frame Skin", "style.skin", { { "GRAM", "Gram (dark, pick your colors)" }, { "BLIZZARD", "Blizzard (default raid frames)" } } },
+            { "info", "", "Blizzard skin uses Blizzard's raid bar, class colors and font. Your own colors are kept for when you switch back.", full = true, cond = isBliz },
+        } },
         { title = "Health Bar", rows = {
             { "dropdown", "Color Mode", "style.healthColor", {
                 { "DARK", "Dark mode (pick colors)" }, { "CLASS", "Class colors" }, { "CLASSDARK", "Class colors (dark)" },
-                { "GRADIENT", "Health gradient (healer)" } } },
-            { "toggle", "Match EllesmereUI", "style.matchEUI", cond = function() return isSolid() and EllesmereUI ~= nil end },
-            { "swatch", "Health Color", "style.barColor", cond = function() return isSolid() and not (EllesmereUI and GT.Get("style.matchEUI")) end },
-            { "toggle", "Class-Tinted Background", "style.classBG", cond = notSolid },
+                { "GRADIENT", "Health gradient (healer)" } }, cond = notBliz },
+            { "toggle", "Match EllesmereUI", "style.matchEUI", cond = function() return notBliz() and (isSolid() and EllesmereUI ~= nil) end },
+            { "swatch", "Health Color", "style.barColor", cond = function() return notBliz() and isSolid() and not (EllesmereUI and GT.Get("style.matchEUI")) end },
+            { "toggle", "Class-Tinted Background", "style.classBG", cond = function() return notBliz() and notSolid() end },
             { "swatch", "Missing Health Color", "style.lossColor", cond = function()
-                return showBG() and not (isSolid() and EllesmereUI and GT.Get("style.matchEUI")) end },
+                return notBliz() and showBG() and not (isSolid() and EllesmereUI and GT.Get("style.matchEUI")) end },
             { "button", "Reset Colors", function(btn)
                 GT.Set("style.barColor", { 0.067, 0.067, 0.067, 0.9 })
                 GT.Set("style.lossColor", { 0.31, 0.31, 0.31 })
                 GT.Set("style.classBG", true)
                 GT.RefreshOptions()
-            end },
-            { "dropdown", "Bar Texture", "style.barTexture", "TEXTURES" },
-            { "swatch", "Border Color", "style.borderColor" },
-            { "slider", "Border Opacity", "style.bgAlpha", 0, 1, 0.05, 2 },
+            end, cond = notBliz },
+            { "dropdown", "Bar Texture", "style.barTexture", "TEXTURES", cond = notBliz },
+            { "swatch", "Border Color", "style.borderColor", cond = notBliz },
+            { "slider", "Border Opacity", "style.bgAlpha", 0, 1, 0.05, 2, cond = notBliz },
         } },
         { title = "Text", rows = {
-            { "dropdown", "Font", "style.font", "FONTS" },
-            { "dropdown", "Name Color", "style.nameColor", { { "CLASS", "Class color" }, { "WHITE", "White" }, { "CUSTOM", "Pick a color" } } },
-            { "swatch", "Custom Name Color", "style.nameCustomColor", cond = function() return GT.Get("style.nameColor") == "CUSTOM" end },
+            { "dropdown", "Font", "style.font", "FONTS", cond = notBliz },
+            { "dropdown", "Name Color", "style.nameColor", { { "CLASS", "Class color" }, { "WHITE", "White" }, { "CUSTOM", "Pick a color" } }, cond = notBliz },
+            { "swatch", "Custom Name Color", "style.nameCustomColor", cond = function() return notBliz() and GT.Get("style.nameColor") == "CUSTOM" end },
             { "swatch", "Health Text Color", "style.healthTextColor" },
         } },
         { title = "My Target", rows = {

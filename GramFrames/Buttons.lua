@@ -355,6 +355,14 @@ function GT.ApplyLook(b)
         b.sub:SetJustifyH("LEFT")
         b.htext:SetPoint("TOPRIGHT", b.health, "TOPRIGHT", -3, -3)
         b.status:SetPoint("CENTER", b.health, "CENTER", 0, 0)
+    elseif GT.IsBlizzardSkin() then
+        -- Blizzard raid frame layout: name top-left (after the role icon), text in the middle
+        local nx = (look.roleIcon and (look.roleSize or 10) + 4) or 3
+        b.name:SetPoint("TOPLEFT", b.health, "TOPLEFT", nx, -3)
+        b.name:SetPoint("TOPRIGHT", b.health, "TOPRIGHT", -3, -3)
+        b.name:SetJustifyH("LEFT")
+        b.htext:SetPoint("CENTER", b.health, "CENTER", 0, -2)
+        b.status:SetPoint("CENTER", b.health, "CENTER", 0, -2)
     else
         local nameY = (look.healthText ~= "NONE") and 4 or 0
         b.name:SetPoint("LEFT", b.health, "LEFT", 4, nameY)
@@ -370,7 +378,11 @@ function GT.ApplyLook(b)
     b.role:SetPoint("TOPLEFT", b.health, "TOPLEFT", 2, -2)
     b.leader:SetSize(math.max(8, rs), math.max(8, rs))
     b.leader:ClearAllPoints()
-    b.leader:SetPoint("TOPLEFT", b.health, "TOPLEFT", (look.roleIcon and rs + 4) or 2, -1)
+    if GT.IsBlizzardSkin() and not isTarget then
+        b.leader:SetPoint("BOTTOMLEFT", b.health, "TOPLEFT", (look.roleIcon and rs + 4) or 2, -5) -- crown peeks over the top, off the name
+    else
+        b.leader:SetPoint("TOPLEFT", b.health, "TOPLEFT", (look.roleIcon and rs + 4) or 2, -1)
+    end
     b.raidIcon:ClearAllPoints()
     b.raidIcon:SetSize(look.raidIconSize or 16, look.raidIconSize or 16)
     b.raidIcon:SetPoint("TOP", b, "TOP", 0, -2) -- inside the box, so the frame above can't cover it
