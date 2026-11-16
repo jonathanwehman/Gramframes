@@ -15,6 +15,7 @@ local UNIT_EVENTS = {
     "UNIT_AURA", "UNIT_THREAT_SITUATION_UPDATE", "UNIT_CONNECTION", "UNIT_NAME_UPDATE",
     "UNIT_FLAGS", "UNIT_PHASE", "INCOMING_RESURRECT_CHANGED", "UNIT_IN_RANGE_UPDATE",
     "PLAYER_FLAGS_CHANGED", -- AFK on/off
+    "UNIT_HEAL_PREDICTION", -- incoming heals
 }
 
 -------------------------------------------------------------------------------
@@ -134,6 +135,21 @@ function GT.BuildVisuals(b, kind)
     b.healthBG:SetTexture(FLAT)
     b.healthBG:SetAllPoints()
 
+    -- incoming heals: a see-through green piece that starts where the health fill
+    -- ends. It is as wide as the whole bar and runs 0..max health, so the game's
+    -- heal amount can go straight in (even when hidden). The health bar clips it.
+    local pred = CreateFrame("StatusBar", nil, b.health)
+    pred:SetStatusBarTexture(FLAT)
+    pred:SetMinMaxValues(0, 1)
+    pred:SetValue(0)
+    pred:SetStatusBarColor(0.15, 0.95, 0.35, 0.55)
+    pred:SetFrameLevel(b.health:GetFrameLevel() + 1)
+    pred:Hide()
+    b.healPred = pred
+    pcall(b.health.SetClipsChildren, b.health, true)
+    b.health:HookScript("OnSizeChanged", function(self) GT.AnchorHealPred(b) end)
+    GT.AnchorHealPred(b)
+
     b.power = CreateFrame("StatusBar", nil, b)
     b.power:SetStatusBarTexture(FLAT)
     b.power:SetMinMaxValues(0, 1)
@@ -147,7 +163,7 @@ function GT.BuildVisuals(b, kind)
     local veil = CreateFrame("Frame", nil, b)
     veil:SetPoint("TOPLEFT", 1, -1)
     veil:SetPoint("BOTTOMRIGHT", -1, 1)
-    veil:SetFrameLevel(b.health:GetFrameLevel() + 1)
+    veil:SetFrameLevel(b.health:GetFrameLevel() + 2)
     veil.tex = veil:CreateTexture(nil, "ARTWORK")
     veil.tex:SetTexture(FLAT)
     veil.tex:SetAllPoints()
@@ -156,7 +172,7 @@ function GT.BuildVisuals(b, kind)
 
     local overlay = CreateFrame("Frame", nil, b)
     overlay:SetAllPoints()
-    overlay:SetFrameLevel(b.health:GetFrameLevel() + 2)
+    overlay:SetFrameLevel(b.health:GetFrameLevel() + 3)
     b.overlay = overlay
 
     b.name = NewFont(overlay, 11)
@@ -180,11 +196,11 @@ function GT.BuildVisuals(b, kind)
     b.frameBorder = CreateBorder(b, "BORDER", 1)
     b.frameBorder:SetColor(0, 0, 0, 1)
 
-    b.targetBorder = CreateBorder(b, "OVERLAY", 4)
+    b.targetBorder = CreateBorder(b, "OVERLAY", 5)
     b.targetBorder:SetColor(1, 0.82, 0.2, 1)
     b.targetBorder:Hide()
 
-    b.aggro = CreateBorder(b, "OVERLAY", 5)
+    b.aggro = CreateBorder(b, "OVERLAY", 6)
     b.aggro:Hide()
     b.aggroLabel = NewFont(b.aggro, 9)
     b.aggroLabel:SetPoint("TOPRIGHT", b, "TOPRIGHT", -2, -2)
@@ -250,6 +266,23 @@ function GT.BuildVisuals(b, kind)
     GT.ApplyLook(b)
 end
 
+-- incoming heals sit right after the health fill, as wide as the bar
+function GT.AnchorHealPred(b)
+    local pred = b.healPred
+    if not pred then return end
+    local fill = b.health:GetStatusBarTexture()
+    pred:ClearAllPoints()
+    if fill then
+        pred:SetPoint("TOPLEFT", fill, "TOPRIGHT")
+        pred:SetPoint("BOTTOMLEFT", fill, "BOTTOMRIGHT")
+    else
+        pred:SetPoint("TOPLEFT", b.health, "TOPLEFT")
+        pred:SetPoint("BOTTOMLEFT", b.health, "BOTTOMLEFT")
+    end
+    local w = b.health:GetWidth()
+    pred:SetWidth((w and w > 0) and w or 1)
+end
+
 -- Apply appearance settings that don't touch protected attributes
 -- bar texture (health + power, and the background part under them). Safe in combat.
 function GT.ApplyBarTexture(b)
@@ -260,6 +293,12 @@ function GT.ApplyBarTexture(b)
     b.healthBG:SetTexture(tex)
     b.power:SetStatusBarTexture(tex)
     b.powerBG:SetTexture(tex)
+    if b.healPred then
+        b.healPred:SetStatusBarTexture(tex)
+        local c = GT.HEAL_PRED_COLOR
+        b.healPred:SetStatusBarColor(c[1], c[2], c[3], c[4])
+        GT.AnchorHealPred(b)
+    end
     -- dispel tint follows the health fill and uses the same texture
     if b.dispelFill then
         local fill = b.health:GetStatusBarTexture()
@@ -397,6 +436,8 @@ local function OnUnitEvent(self, event, unit)
         GT.UpdateName(self); GT.UpdateColor(self)
     elseif event == "PLAYER_FLAGS_CHANGED" then
         GT.UpdateStatus(self); GT.UpdateHealthText(self)
+    elseif event == "UNIT_HEAL_PREDICTION" then
+        GT.UpdateHealPred(self)
     elseif event == "UNIT_IN_RANGE_UPDATE" then
         GT.UpdateRange(self) -- fires often in a moving group; only redo the fade
     else
@@ -443,6 +484,11 @@ local function Calc(b)
         end
         b.gfCalc = (ok and c and c.GetCurrentHealth and c.GetMaximumHealth) and c or false
         if not b.gfCalc then return nil end
+        -- incoming heals stop at full health (the bar also clips anything past it)
+        if c.SetIncomingHealClampMode and Enum and Enum.UnitIncomingHealClampMode
+            and Enum.UnitIncomingHealClampMode.MissingHealth ~= nil then
+            pcall(c.SetIncomingHealClampMode, c, Enum.UnitIncomingHealClampMode.MissingHealth)
+        end
     end
     if not pcall(UnitGetDetailedHealPrediction, b.unit, "player", b.gfCalc) then return nil end
     return b.gfCalc
@@ -520,6 +566,7 @@ function GT.UpdateHealth(b)
         b.health:SetMinMaxValues(0, 1); b.health:SetValue(1)
         GT.UpdateStatus(b)
         b.htext:Hide()
+        if b.healPred then b.healPred:Hide() end
         if GT.Look().healthColor == "GRADIENT" then GT.UpdateColor(b) end
         return
     elseif b.unseen then
@@ -539,7 +586,36 @@ function GT.UpdateHealth(b)
     if not rawequal(h, nil) then b.health:SetValue(h) end
     GT.UpdateStatus(b)
     GT.UpdateHealthText(b)
+    GT.UpdateHealPred(b)
     if GT.Look().healthColor == "GRADIENT" then GT.UpdateColor(b) end
+end
+
+-- Incoming heals (everyone's, yours included) on a groupmate. The amount and
+-- max health go straight into the green bar; Lua never reads them.
+GT.HEAL_PRED_COLOR = { 0.15, 0.95, 0.35, 0.55 }
+function GT.UpdateHealPred(b)
+    local pred = b.healPred
+    if not pred then return end
+    local u = b.unit
+    if not u or b.kind == "target" or GT.Look().healPrediction == false
+        or b.unseen or b.isDead or b.isOffline then
+        pred:Hide() return
+    end
+    local max, amt
+    local c = Calc(b)
+    if c then
+        max = Call(c.GetMaximumHealth, c)
+        if c.GetIncomingHeals then amt = Call(c.GetIncomingHeals, c) end
+    end
+    if rawequal(max, nil) then max = Call(UnitHealthMax, u) end
+    if rawequal(amt, nil) then amt = Call(UnitGetIncomingHeals, u) end
+    if rawequal(max, nil) or rawequal(amt, nil) then pred:Hide() return end
+    local m = Num(max)
+    if m and m <= 0 then pred:Hide() return end
+    if not pcall(pred.SetMinMaxValues, pred, 0, max) or not pcall(pred.SetValue, pred, amt) then
+        pred:Hide() return
+    end
+    pred:Show()
 end
 
 -- eating / drinking: the food & drink buffs share a few names. Out of combat only

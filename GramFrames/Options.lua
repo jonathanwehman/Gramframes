@@ -82,6 +82,10 @@ local function FrameSections(kind)
             { "dropdown", "Health Text", "layout.look.healthText", { { "NONE", "None" }, { "PERCENT", "Percent" }, { "MISSING", "Missing health" } } },
             { "slider", "Health Text Size", "layout.look.healthTextSize", 8, 18, 1 },
         } },
+        { title = "Heals", rows = {
+            { "toggle", "Show Incoming Heals", "layout.look.healPrediction" },
+            { "info", "", "A see-through green piece on the bar shows heals that are being cast on someone (yours and other healers').", full = true },
+        } },
         { title = "Power", rows = {
             { "dropdown", "Power Bar", "layout.look.powerBar", { { "NONE", "Off" }, { "HEALERS", "Healers only" }, { "ALL", "Everyone" } } },
             { "slider", "Power Bar Height", "layout.look.powerHeight", 1, 10, 1 },

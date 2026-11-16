@@ -429,6 +429,15 @@ local function FillFake(b, i)
     local tc = GT.Look().targetColor or { 1, 0.82, 0.2 }
     b.targetBorder:SetColor(tc[1], tc[2], tc[3], 1)
     b.targetBorder:SetShown(GT.Look().targetHighlight and i == 4)
+    -- preview: incoming heals landing on a couple of hurt people
+    if b.healPred then
+        local inc = ({ [2] = 0.25, [6] = 0.3, [16] = 0.2 })[i]
+        if inc and hp > 0 and GT.Look().healPrediction ~= false then
+            b.healPred:SetMinMaxValues(0, 1); b.healPred:SetValue(inc); b.healPred:Show()
+        else
+            b.healPred:Hide()
+        end
+    end
     -- preview: one frame out of range in party (5) and raid (11), a couple of markers
     GT.ApplyRange(b, not (i == 5 or i == 11))
     b.fakeMarker = ({ [2] = 8, [7] = 1, [14] = 3 })[i]

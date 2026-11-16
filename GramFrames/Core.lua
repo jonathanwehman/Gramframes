@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.11"
+GT.version = "2.2.12"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -253,6 +253,7 @@ local VIEW_DEFAULTS = {
         leaderIcon = true,
         raidIcon = true,
         targetHighlight = true,
+        healPrediction = true,      -- green piece on the bar for heals on the way
     },
     buffs = {
         enabled = true,
