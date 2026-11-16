@@ -1,5 +1,8 @@
 # Gram Frames changelog
 
+## 2.2.17
+- Out of range frames are much lighter: a soft grey wash instead of dark, and the name stays easy to read. Still solid, so the ground doesn't show through.
+
 ## 2.2.16
 - Out of range frames stay solid now: the bars go darker and the name dims. Before, the whole frame went see-through, so the ground showed through (on grass it looked brown).
 - Offline frames are solid too.

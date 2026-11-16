@@ -1389,11 +1389,12 @@ function GT.ApplyRange(b, inRange)
     else
         -- "fade": darken the bars and dim the text, but keep the frame solid.
         -- (Fading the whole frame let the ground show through - grass made it look brown.)
+        -- a light grey wash (not black) so far-away frames are still easy to read
         local fade = look.rangeAlpha or 0.4
         b:SetAlpha(1)
-        b.oorVeil.tex:SetVertexColor(0, 0, 0, 1)
-        Set(b.oorVeil, 0, 1 - fade)
-        Set(b.overlay, 1, math.max(fade, 0.35))
+        b.oorVeil.tex:SetVertexColor(0.30, 0.30, 0.30, 1)
+        Set(b.oorVeil, 0, (1 - fade) * 0.55)
+        Set(b.overlay, 1, math.min(1, fade + 0.25))
     end
 end
 
