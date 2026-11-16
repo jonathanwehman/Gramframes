@@ -1,5 +1,10 @@
 # Gram Frames changelog
 
+## 2.2.12
+- **Incoming heals**: a see-through green piece on the health bar shows heals being cast on someone (yours and other healers'), so you can see who's already getting healed.
+- New option on the Party and Raid pages under **Heals**: Show Incoming Heals (on by default).
+- Test mode shows incoming heals on a couple of frames.
+
 ## 2.2.11
 - Test mode shows a color key under the frames: purple = Curse, green = Poison, brown = Disease, blue = Magic.
 
