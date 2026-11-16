@@ -645,7 +645,7 @@ GT.On("SettingChanged", function(section, key)
         return
     end
     if (section == "layout" or section == "tank") and key == "pos" then return end
-    if section == "minimap" then return end
+    if section == "minimap" or section == "macros" or section == "clicks" then return end
     -- colors: just repaint (instant, works in combat, no frame rebuild while you drag the picker)
     -- out-of-range look: just re-apply range (instant, combat-safe)
     if section == "layout" and (key == "rangeStyle" or key == "oorColor" or key == "oorTextAlpha" or key == "rangeAlpha") then

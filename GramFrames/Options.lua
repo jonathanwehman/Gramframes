@@ -138,8 +138,22 @@ local pages = {
       sections = FrameSections("raid") },
     { key = "clicks", group = "Controls", title = "Click-Casting", icon = "Interface\\Icons\\INV_Gauntlets_04",
       desc = "Bind spells to clicks on frames. Pick a rank to downrank - Max always casts your best.",
+      toggle = "clicks.enabled",
       sections = {
+        { title = "On / Off", rows = {
+            { "toggle", "Use Click-Casting", "clicks.enabled" },
+            { "info", "", "Off: left click targets, right click opens the menu. Heal with mouseover macros instead (Mouseover Macros page).", full = true },
+        } },
         { title = "Bindings", custom = function(parent, width) return GT.BuildClickRows(parent, width) end },
+      } },
+    { key = "macros", group = "Controls", title = "Mouseover Macros", icon = "Interface\\Icons\\INV_Misc_Note_01",
+      desc = "Makes a macro for each of your heals and buffs that casts on whoever your mouse is over. Put them on your bars.",
+      sections = {
+        { title = "Settings", rows = {
+            { "toggle", "No Mouseover: Cast on Target", "macros.fallback" },
+            { "dropdown", "Save Macros For", "macros.perChar", { { "CHAR", "This character" }, { "ACCOUNT", "Account (all characters)" } } },
+        } },
+        { title = "Your Spells", custom = function(parent, width) return GT.BuildMacroRows(parent, width) end },
       } },
     { key = "tank", group = "Tank", title = "Tank Panel", icon = "Interface\\Icons\\Ability_Warrior_DefensiveStance",
       toggle = "tank.enabled",

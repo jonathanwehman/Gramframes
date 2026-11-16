@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.12"
+GT.version = "2.2.13"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -356,6 +356,7 @@ GT.defaults = {
         thickness = 2,
     },
     clicks = {
+        enabled = true,             -- off = left click targets, right click menu (use mouseover macros)
         bindings = {
             { mod = "", button = "1", action = "TARGET", value = "" },
             { mod = "", button = "2", action = "MENU", value = "" },

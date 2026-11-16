@@ -1,5 +1,10 @@
 # Gram Frames changelog
 
+## 2.2.13
+- Click-casting can be turned off: **Click-Casting → Use Click-Casting**. When it's off, left click targets and right click opens the menu.
+- New **Mouseover Macros** page: makes a macro for each of your class's heals, buffs and cures that casts on whoever your mouse is over. Click **Make** to put one on your cursor and drop it on an action bar, or **Make All Class Spells** to make them all (then /macro to drag them).
+- Choose whether a macro casts on your target when you're not over a frame, and whether macros are saved for this character or your whole account.
+
 ## 2.2.12
 - **Incoming heals**: a see-through green piece on the health bar shows heals being cast on someone (yours and other healers'), so you can see who's already getting healed.
 - New option on the Party and Raid pages under **Heals**: Show Incoming Heals (on by default).

@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.2.12 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.2.13 (beta)** · Interface 16001 · type `/gf` in game
 
 What's new: see the [changelog](CHANGELOG.md).
 
@@ -41,6 +41,11 @@ What's new: see the [changelog](CHANGELOG.md).
 - Bind any modifier + mouse button to a spell, macro, raid marker, target, assist, focus or menu
 - Pick spells from a list of your class spells (heals first), with icons
 - Choose **Max rank** or any specific rank for cheaper heals
+- Don't want click-casting? Turn it off (Click-Casting → Use Click-Casting)
+
+### Mouseover macros
+- One click makes a mouseover macro for each of your class's heals, buffs and cures
+- Drop them on your action bars, hover a frame and press the key
 
 ### Healer Mana
 - Every healer's name and mana % beside your frames

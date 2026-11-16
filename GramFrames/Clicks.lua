@@ -128,7 +128,11 @@ GT.ResolveSpell = ResolveSpell
 -------------------------------------------------------------------------------
 -- Bindings -> secure attributes
 -------------------------------------------------------------------------------
+-- click-casting off: plain frames (left click targets, right click opens the menu)
+local PLAIN = { { "type1", "target" }, { "type2", "togglemenu" } }
+
 function GT.ClickAttributes()
+    if GT.db.clicks.enabled == false then return PLAIN end
     local out = {}
     for _, bnd in ipairs(GT.db.clicks.bindings) do
         local prefix, btn = bnd.mod or "", bnd.button or "1"
@@ -209,4 +213,9 @@ for _, e in ipairs({ "SPELLS_CHANGED", "PLAYER_LOGIN", "LEARNED_SPELL_IN_SKILL_L
 f:SetScript("OnEvent", function()
     GT.ScanSpellbook()
     GT.ApplyAllClicks()
+end)
+
+-- click-casting switched on/off
+GT.On("SettingChanged", function(section, key)
+    if section == "clicks" or section == "all" then GT.ApplyAllClicks() end
 end)
