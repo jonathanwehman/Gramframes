@@ -1,5 +1,10 @@
 # Gram Frames changelog
 
+## 2.2.16
+- Out of range frames stay solid now: the bars go darker and the name dims. Before, the whole frame went see-through, so the ground showed through (on grass it looked brown).
+- Offline frames are solid too.
+- The out-of-range slider is now called **Brightness**.
+
 ## 2.2.15
 - **Welcome screen**: the first time you log in, pick a look: **Modern** (dark Gram frames) or **Blizzard** (looks like the default raid frames). Shows once; change it later under General → Frame Skin, or type `/gf welcome` to see it again.
 - The Gram skin is now called **Modern** in the Frame Skin list.

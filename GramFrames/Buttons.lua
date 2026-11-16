@@ -1387,8 +1387,13 @@ function GT.ApplyRange(b, inRange)
         Set(b.oorVeil, 0, 1)
         Set(b.overlay, 1, dim)
     else
-        b.oorVeil:SetAlpha(0); b.overlay:SetAlpha(1)
-        Set(b, 1, look.rangeAlpha)
+        -- "fade": darken the bars and dim the text, but keep the frame solid.
+        -- (Fading the whole frame let the ground show through - grass made it look brown.)
+        local fade = look.rangeAlpha or 0.4
+        b:SetAlpha(1)
+        b.oorVeil.tex:SetVertexColor(0, 0, 0, 1)
+        Set(b.oorVeil, 0, 1 - fade)
+        Set(b.overlay, 1, math.max(fade, 0.35))
     end
 end
 
@@ -1400,7 +1405,7 @@ function GT.UpdateRange(b)
     if IsTrue(Call(UnitIsUnit, u, "player")) or b.kind == "target" then GT.ApplyRange(b, true) return end
     -- offline: its own look (grey bar + OFFLINE), not out-of-range
     local connected = Call(UnitIsConnected, u)
-    if Readable(connected) and connected == false then GT.ApplyRange(b, true) b:SetAlpha(0.8) return end
+    if Readable(connected) and connected == false then GT.ApplyRange(b, true) return end
     -- another phase / can't be seen at all: definitely out of range
     local phase = Call(UnitPhaseReason, u)
     if Readable(phase) and phase ~= nil then GT.ApplyRange(b, false) return end

@@ -110,7 +110,7 @@ local function FrameSections(kind)
             { "dropdown", "Style", "layout.look.rangeStyle", { { "BOX", "Grey out the whole box" }, { "FADE", "Fade the frame" } } },
             { "swatch", "Box Color", "layout.look.oorColor", cond = function() return GT.Get("layout.look.rangeStyle") ~= "FADE" end },
             { "slider", "Name & Icon Opacity", "layout.look.oorTextAlpha", 0.2, 1, 0.05, 2, cond = function() return GT.Get("layout.look.rangeStyle") ~= "FADE" end },
-            { "slider", "Frame Opacity", "layout.look.rangeAlpha", 0.1, 1, 0.05, 2, cond = function() return GT.Get("layout.look.rangeStyle") == "FADE" end },
+            { "slider", "Brightness", "layout.look.rangeAlpha", 0.1, 1, 0.05, 2, cond = function() return GT.Get("layout.look.rangeStyle") == "FADE" end },
         } },
         { title = "Icons", rows = {
             { "toggle", "Role Icons", "layout.look.roleIcon" },
