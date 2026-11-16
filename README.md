@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.2.14 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.2.15 (beta)** · Interface 16001 · type `/gf` in game
 
 What's new: see the [changelog](CHANGELOG.md).
 
@@ -36,7 +36,7 @@ What's new: see the [changelog](CHANGELOG.md).
 - Blizzard round role icons (tank shield, healer cross, DPS sword), leader icon, raid markers, gold target highlight (pick your own color)
 - AFK and OFFLINE show on the frame with how many minutes they've been away
 - Color pickers for names, health text, frame border and target box, all on the General page
-- Prefer the default look? Switch the Frame Skin to Blizzard (General page)
+- First login asks: Modern or Blizzard look (change it later under General → Frame Skin, or `/gf welcome`)
 
 ### Click-casting with downranking
 - Bind any modifier + mouse button to a spell, macro, raid marker, target, assist, focus or menu
@@ -73,6 +73,7 @@ Each frame only listens for updates about its own player, and one shared timer h
 | `/gf test` | Shows fake frames so you can set up without a group |
 | `/gf lock` | Locks or unlocks the frames (the pink drag bar hides when locked) |
 | `/gf minimap` | Shows or hides the minimap button |
+| `/gf welcome` | Opens the welcome screen to pick Modern or Blizzard look |
 | `/gf debug` | Prints what the game reports for each frame (handy for bug reports) |
 
 ## Screenshots

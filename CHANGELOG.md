@@ -1,5 +1,9 @@
 # Gram Frames changelog
 
+## 2.2.15
+- **Welcome screen**: the first time you log in, pick a look: **Modern** (dark Gram frames) or **Blizzard** (looks like the default raid frames). Shows once; change it later under General → Frame Skin, or type `/gf welcome` to see it again.
+- The Gram skin is now called **Modern** in the Frame Skin list.
+
 ## 2.2.14
 - New **Frame Skin** option on the General page: **Gram** (the dark look, your own colors) or **Blizzard** (Blizzard's raid bar texture, class colors, Friz Quadrata font, name in the top-left like the default raid frames).
 - Your own colors, font and texture are kept, so switching back to Gram brings them back.

@@ -215,7 +215,7 @@ local pages = {
       desc = "Colors, font and bar texture for party and raid, plus lock, minimap and reset. /gf opens this window.",
       sections = {
         { title = "Skin", rows = {
-            { "dropdown", "Frame Skin", "style.skin", { { "GRAM", "Gram (dark, pick your colors)" }, { "BLIZZARD", "Blizzard (default raid frames)" } } },
+            { "dropdown", "Frame Skin", "style.skin", { { "GRAM", "Modern (dark, pick your colors)" }, { "BLIZZARD", "Blizzard (default raid frames)" } } },
             { "info", "", "Blizzard skin uses Blizzard's raid bar, class colors and font. Your own colors are kept for when you switch back.", full = true, cond = isBliz },
         } },
         { title = "Health Bar", rows = {
@@ -275,7 +275,7 @@ local pages = {
                     btn.text:SetText("Click again to confirm")
                 end
             end },
-            { "info", "Commands", "/gf  -  /gf test  -  /gf lock  -  /gf minimap" },
+            { "info", "Commands", "/gf  -  /gf test  -  /gf lock  -  /gf minimap  -  /gf welcome" },
         } },
       } },
 }
