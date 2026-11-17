@@ -1,0 +1,51 @@
+name: Check addon
+
+# Runs on every pull request (and on main) so Jason's review starts from a
+# build that at least loads: Lua syntax, .toc file list, versions, and the zip.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua 5.1 (same as WoW)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lua5.1
+
+      - name: Lua syntax
+        run: |
+          fail=0
+          for f in GramFrames/*.lua; do
+            luac5.1 -p "$f" || fail=1
+          done
+          exit $fail
+
+      - name: Every file in the .toc exists
+        run: |
+          fail=0
+          while IFS= read -r line; do
+            line="${line%$'\r'}"
+            case "$line" in ''|'#'*) continue ;; esac
+            if [ ! -f "GramFrames/$line" ]; then echo "::error::GramFrames.toc lists $line but it's missing"; fail=1; fi
+          done < GramFrames/GramFrames.toc
+          exit $fail
+
+      - name: Version is the same everywhere
+        run: |
+          TOC=$(grep -m1 '^## Version:' GramFrames/GramFrames.toc | sed 's/## Version:[[:space:]]*//' | tr -d '\r')
+          CORE=$(grep -m1 '^GT.version' GramFrames/Core.lua | sed 's/.*"\(.*\)".*/\1/')
+          README=$(grep -m1 '\*\*Version ' README.md | sed 's/.*\*\*Version \([^ ]*\).*/\1/')
+          echo "toc=$TOC core=$CORE readme=$README"
+          [ "$TOC" = "$CORE" ] && [ "$TOC" = "$README" ] || { echo "::error::Versions don't match (toc $TOC, Core.lua $CORE, README $README)"; exit 1; }
+          grep -q "^## $TOC\$" CHANGELOG.md || { echo "::error::CHANGELOG.md has no '## $TOC' entry"; exit 1; }
+
+      - name: GramFrames.zip matches the folder and has no fonts
+        run: |
+          if unzip -l GramFrames.zip | grep -qiE '\.ttf|\.otf|expressway'; then echo "::error::Font file inside GramFrames.zip (Expressway is paid - never ship it)"; exit 1; fi
+          if git ls-files | grep -qiE '\.ttf$|\.otf$|expressway'; then echo "::error::Font file committed to the repo"; exit 1; fi
+          mkdir -p /tmp/z && unzip -q GramFrames.zip -d /tmp/z
+          diff -r -x '*.ttf' -x '*.otf' -x '*Expressway*' GramFrames /tmp/z/GramFrames || { echo "::error::GramFrames.zip is out of date - rebuild it"; exit 1; }
