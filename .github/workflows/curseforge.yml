@@ -1,13 +1,18 @@
 name: Upload to CurseForge
 
-# Run by hand from the Actions tab (or by Claude). Uploads the GramFrames.zip
-# that is on main to the Gram Frames CurseForge project.
+# Uploads the GramFrames.zip that is on main to the Gram Frames CurseForge project.
+# Runs by itself when a reviewed pull request is merged and it bumped "## Version:"
+# in the .toc (changelog = that version's section of CHANGELOG.md). Can also be
+# run by hand from the Actions tab.
 on:
+  push:
+    branches: [main]
+    paths: [GramFrames/GramFrames.toc]
   workflow_dispatch:
     inputs:
       changelog:
-        description: "Changelog text (markdown)"
-        required: true
+        description: "Changelog text (markdown). Leave empty to use this version's CHANGELOG.md section."
+        required: false
         type: string
       release_type:
         description: "release, beta or alpha"
@@ -24,14 +29,27 @@ jobs:
       CF_HOST: https://wow.curseforge.com
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Did this merge change the version?
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" != "push" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          NEW=$(grep -m1 '^## Version:' GramFrames/GramFrames.toc | tr -d '\r')
+          OLD=$(git show HEAD~1:GramFrames/GramFrames.toc 2>/dev/null | grep -m1 '^## Version:' | tr -d '\r')
+          echo "before: $OLD  now: $NEW"
+          if [ "$NEW" = "$OLD" ]; then echo "Version unchanged - nothing to upload."; echo "go=false" >> "$GITHUB_OUTPUT"; else echo "go=true" >> "$GITHUB_OUTPUT"; fi
 
       - name: Check settings
+        if: steps.gate.outputs.go == 'true'
         run: |
           if [ -z "$CF_API_TOKEN" ]; then echo "::error::Missing secret CF_API_TOKEN"; exit 1; fi
           if [ -z "$CF_PROJECT_ID" ]; then echo "::error::Missing variable CF_PROJECT_ID"; exit 1; fi
           if unzip -l GramFrames.zip | grep -qiE '\.ttf|\.otf|expressway'; then echo "::error::Font file inside zip"; exit 1; fi
 
       - name: Work out version and game version
+        if: steps.gate.outputs.go == 'true'
         id: meta
         run: |
           VERSION=$(grep -m1 '^## Version:' GramFrames/GramFrames.toc | sed 's/## Version:[[:space:]]*//' | tr -d '\r')
@@ -51,12 +69,20 @@ jobs:
           echo "ids=$IDS" >> "$GITHUB_OUTPUT"
 
       - name: Upload
+        if: steps.gate.outputs.go == 'true'
         env:
-          CHANGELOG: ${{ inputs.changelog }}
-          RELEASE: ${{ inputs.release_type }}
+          CHANGELOG_IN: ${{ inputs.changelog }}
+          RELEASE_IN: ${{ inputs.release_type }}
           VERSION: ${{ steps.meta.outputs.version }}
           IDS: ${{ steps.meta.outputs.ids }}
         run: |
+          CHANGELOG="$CHANGELOG_IN"
+          RELEASE="${RELEASE_IN:-release}"
+          if [ -z "$CHANGELOG" ]; then
+            # this version's section of CHANGELOG.md
+            CHANGELOG=$(awk -v v="## $VERSION" '$0==v{on=1; print "**" substr($0,4) "**"; next} on && /^## /{exit} on{print}' CHANGELOG.md)
+            [ -n "$CHANGELOG" ] || CHANGELOG="**$VERSION**"
+          fi
           jq -n --arg c "$CHANGELOG" --arg n "Gram Frames $VERSION" --arg r "$RELEASE" --argjson g "$IDS" \
             '{changelog:$c, changelogType:"markdown", displayName:$n, releaseType:$r, gameVersions:$g}' > metadata.json
           cat metadata.json
