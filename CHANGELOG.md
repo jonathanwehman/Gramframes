@@ -1,5 +1,8 @@
 # Gram Frames changelog
 
+## 2.2.18
+- Click-casting has a new modifier: **Ctrl + Alt + Shift**. Handy for menus or extra binds while keeping plain left and right click free for heals.
+
 ## 2.2.17
 - Out of range frames are much lighter: a soft grey wash instead of dark, and the name stays easy to read. Still solid, so the ground doesn't show through.
 

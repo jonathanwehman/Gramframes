@@ -286,9 +286,9 @@ local pages = {
 function GT.BuildClickRows(parent, width)
     local y = 0
     -- everything has to fit, Rank included: the spell column takes what's left
-    local cols = { 95, 95, 125, 0, 80 }
+    local cols = { 120, 95, 120, 0, 80 } -- Modifier fits "Ctrl + Alt + Shift"
     local function spare() return width - (cols[1] + cols[2] + cols[3] + cols[5] + 22 + 6 * 6) end
-    if spare() < 130 then cols[1], cols[2], cols[3], cols[5] = 80, 80, 110, 74 end
+    if spare() < 130 then cols[1], cols[2], cols[3], cols[5] = 100, 80, 110, 74 end
     cols[4] = math.max(110, spare())
     local function header(text, x, w)
         local fs = UI.Font(parent, 11, C.muted)

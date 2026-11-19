@@ -4,7 +4,7 @@
 
 Dark, clean raid and party frames for **WoW Forever**, built from scratch for tanks and healers who want full control without the clutter.
 
-**Version 2.2.17 (beta)** · Interface 16001 · type `/gf` in game
+**Version 2.2.18 (beta)** · Interface 16001 · type `/gf` in game
 
 What's new: see the [changelog](CHANGELOG.md).
 
@@ -39,7 +39,7 @@ What's new: see the [changelog](CHANGELOG.md).
 - First login asks: Modern or Blizzard look (change it later under General → Frame Skin, or `/gf welcome`)
 
 ### Click-casting with downranking
-- Bind any modifier + mouse button to a spell, macro, raid marker, target, assist, focus or menu
+- Bind any modifier (up to Ctrl + Alt + Shift) + mouse button to a spell, macro, raid marker, target, assist, focus or menu
 - Pick spells from a list of your class spells (heals first), with icons
 - Choose **Max rank** or any specific rank for cheaper heals
 - Don't want click-casting? Turn it off (Click-Casting → Use Click-Casting)

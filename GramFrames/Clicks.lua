@@ -6,6 +6,7 @@ local _, GT = ...
 GT.MODS = {
     { "", "None" }, { "shift-", "Shift" }, { "ctrl-", "Ctrl" }, { "alt-", "Alt" },
     { "ctrl-shift-", "Ctrl + Shift" }, { "alt-shift-", "Alt + Shift" }, { "alt-ctrl-", "Alt + Ctrl" },
+    { "alt-ctrl-shift-", "Ctrl + Alt + Shift" },
 }
 GT.MOUSE = { { "1", "Left Click" }, { "2", "Right Click" }, { "3", "Middle Click" }, { "4", "Button 4" }, { "5", "Button 5" } }
 GT.ACTIONS = {
