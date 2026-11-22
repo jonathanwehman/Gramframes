@@ -426,6 +426,7 @@ function GT.ApplyLook(b)
         d:ClearAllPoints()
         if i == 1 then
             d:SetPoint("BOTTOMRIGHT", b.health, "BOTTOMRIGHT", -2, 2) -- bottom right corner
+            b.gfKeyDebShift = nil
         else
             d:SetPoint("RIGHT", b.keyDebuffs[i - 1], "LEFT", -1, 0)
         end
@@ -1456,7 +1457,7 @@ local function IsKeyAura(aura, ids, names)
 end
 
 -- Lua path: read the auras ourselves (works whenever the game lets us see them)
-local function LuaKeyAuras(icons, u, filter, ids, names, color)
+local function LuaKeyAuras(icons, u, filter, ids, names, color, skipNativeCovered)
     if not (C_UnitAuras and C_UnitAuras.GetAuraSlots and C_UnitAuras.GetAuraDataBySlot) then return end
     local res = { pcall(C_UnitAuras.GetAuraSlots, u, filter, 40) }
     if not res[1] then return end
@@ -1464,7 +1465,18 @@ local function LuaKeyAuras(icons, u, filter, ids, names, color)
     for i = 3, #res do
         if shown >= #icons then break end
         local ok, aura = pcall(C_UnitAuras.GetAuraDataBySlot, u, res[i])
-        if ok and aura and IsKeyAura(aura, ids, names) then
+        local covered = false
+        if ok and aura and skipNativeCovered then
+            -- mine, or flagged important by the game: the native box shows these
+            local mine = aura.isFromPlayerOrPlayerPet
+            if not Readable(mine) or mine then covered = true end
+            local id = aura.spellId
+            if not covered and Readable(id) and AuraUtil and AuraUtil.IsPriorityDebuff then
+                local pok, prio = pcall(AuraUtil.IsPriorityDebuff, id)
+                if pok and Readable(prio) and prio then covered = true end
+            end
+        end
+        if ok and aura and not covered and IsKeyAura(aura, ids, names) then
             shown = shown + 1
             local d = icons[shown]
             if pcall(ShowDebuff, d, u, aura, false) then
@@ -1527,22 +1539,64 @@ function GT.UpdateKeyAuras(b)
         LuaKeyAuras(b.keyBuffs, u, "HELPFUL", KEY_BUFF_IDS, KEY_BUFF_NAMES, KEY_BUFF_COLOR)
     end
 
-    -- Forbearance / Weakened Soul
-    local dnative = native and KeyDebuffsNative()
-    local dsig = table.concat({ tostring(debOn), kd }, ":")
-    if dnative and b.gfKeyDebSig ~= dsig then
+    -- Forbearance / Weakened Soul.
+    -- The game only lets addons pick a debuff on a friendly player by spell ID when it
+    -- marks that spell "never secret". When it doesn't, we ask the game for two things
+    -- it does allow in combat: debuffs YOU put on them (your own Weakened Soul /
+    -- Forbearance) and debuffs the game itself flags as important (Forbearance for
+    -- paladins, like Blizzard's own raid frames). Anything else (someone else's Weakened
+    -- Soul) shows whenever the game lets us read it, which is outside restricted fights.
+    local idsOK = KeyDebuffsNative()
+    local dsig = table.concat({ tostring(debOn), kd, tostring(idsOK) }, ":")
+    if native and b.gfKeyDebSig ~= dsig then
         if b.gfKeyDebBox then b.gfKeyDebBox:Hide(); pcall(b.gfKeyDebBox.SetUnit, b.gfKeyDebBox, nil) end
         b.gfKeyDebBox, b.gfKeyDebSig = nil, dsig
         if debOn then
-            local ok, box = pcall(KeyBox, b, "keydebuffs", "HARMFUL", KEY_DEBUFF_IDS, "keydebuff", "BOTTOMRIGHT", -2, 2, nil, kd)
+            local groups
+            if idsOK then
+                groups = { { key = "keydeb", filter = "HARMFUL", max = 3, size = kd, kind = "keydebuff",
+                    candidateFilters = { includeSpellIDs = KEY_DEBUFF_IDS } } }
+            else
+                groups = {
+                    { key = "keydebmine", filter = "HARMFUL", max = 2, size = kd, kind = "keydebuff",
+                      candidateFilters = { isFromPlayerOrPlayerPet = true, maxDuration = 120 } },
+                    { key = "keydebprio", filter = "HARMFUL", max = 2, size = kd, kind = "keydebuff",
+                      candidateFilters = { isPriorityAura = true, isFromPlayerOrPlayerPet = false } },
+                }
+            end
+            local ok, box = pcall(NewBox, b, groups, "BOTTOMRIGHT", -2, 2, "Left", "Up")
             if ok then b.gfKeyDebBox = box end
         end
     end
-    if dnative and b.gfKeyDebBox then
+    local nativeDeb = native and b.gfKeyDebBox ~= nil
+    if nativeDeb then
         if u and debOn then BindBox(b.gfKeyDebBox, u) else b.gfKeyDebBox:Hide() end
-    elseif debOn and u then
-        LuaKeyAuras(b.keyDebuffs, u, "HARMFUL", KEY_DEBUFF_IDS, KEY_DEBUFF_NAMES, KEY_DEBUFF_COLOR)
     end
+    if debOn and u and not (nativeDeb and idsOK) then
+        -- Lua extras: only the ones the native box above can't already show
+        LuaKeyAuras(b.keyDebuffs, u, "HARMFUL", KEY_DEBUFF_IDS, KEY_DEBUFF_NAMES, KEY_DEBUFF_COLOR, nativeDeb)
+    end
+    -- when the native box is in use, Lua extras sit just left of it
+    local shift = nativeDeb and (2 * (kd + 1)) or 0
+    if b.keyDebuffs[1] and b.gfKeyDebShift ~= shift then
+        b.gfKeyDebShift = shift
+        b.keyDebuffs[1]:ClearAllPoints()
+        b.keyDebuffs[1]:SetPoint("BOTTOMRIGHT", b.health, "BOTTOMRIGHT", -2 - shift, 2)
+    end
+end
+
+-- /gf auras: tells you what the game lets Gram Frames see for these debuffs
+function GT.AuraReport()
+    local function lvl(id)
+        if not (C_Secrets and C_Secrets.GetSpellAuraSecrecy) then return "n/a" end
+        local ok, v = pcall(C_Secrets.GetSpellAuraSecrecy, id)
+        if not ok then return "?" end
+        if Enum and Enum.SecrecyLevel then
+            for k, e in pairs(Enum.SecrecyLevel) do if e == v then return k end end
+        end
+        return tostring(v)
+    end
+    GT.Print(("Forbearance: %s  |  Weakened Soul: %s  |  native: %s"):format(lvl(25771), lvl(6788), tostring(NativeAvailable())))
 end
 
 -- Range fade. UnitInRange can return secret booleans in restricted areas;

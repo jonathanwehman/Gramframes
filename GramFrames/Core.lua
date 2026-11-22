@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.3.0"
+GT.version = "2.3.1"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -662,6 +662,8 @@ SlashCmdList.GRAMFRAMES = function(msg)
         GT.Print(GT.db.minimap.hide and "minimap button hidden (/gf minimap brings it back)" or "minimap button shown")
     elseif msg == "welcome" or msg == "skin" then
         if GT.ShowWelcome then GT.ShowWelcome() end
+    elseif msg == "auras" then
+        if GT.AuraReport then GT.AuraReport() end
     elseif msg == "debug" then
         if GT.DebugFrames then GT.DebugFrames() end
     elseif msg == "reset" then

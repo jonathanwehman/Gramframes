@@ -1,5 +1,9 @@
 # Gram Frames changelog
 
+## 2.3.1
+- **Weakened Soul / Forbearance fix.** In dungeon and raid fights the game hides most debuffs on players from addons. Gram Frames now also asks the game for the ones it does allow mid-fight: debuffs **you** put on someone (your own Weakened Soul or Forbearance) and debuffs the game flags as important (Forbearance for paladins). Someone else's Weakened Soul still shows whenever the game lets addons see it.
+- New `/gf auras` command: prints what the game is letting Gram Frames see for these two debuffs.
+
 ## 2.3.0
 - **Shields & saves** on every frame. A gold box on the right side shows **Blessing of Protection**, **Divine Shield / Divine Protection** (bubble), **Power Word: Shield**, **Blessing of Freedom** and **Blessing of Sacrifice**, with a timer swipe.
 - A red box in the bottom-right corner shows **Forbearance** and **Weakened Soul**, so you know who can't get bubbled/BoP'd or shielded again yet.
