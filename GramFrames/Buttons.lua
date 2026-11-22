@@ -249,6 +249,14 @@ function GT.BuildVisuals(b, kind)
         b.debuffs[i] = AuraIcon()
         b.buffs[i] = AuraIcon()
     end
+    -- shields & saves (BoP, bubble, PW:S, Freedom, Sacrifice) and Forbearance / Weakened Soul
+    b.keyBuffs, b.keyDebuffs = {}, {}
+    for i = 1, 3 do
+        b.keyBuffs[i] = AuraIcon()
+        b.keyDebuffs[i] = AuraIcon()
+        b.keyBuffs[i]:SetFrameLevel(overlay:GetFrameLevel() + 3)
+        b.keyDebuffs[i]:SetFrameLevel(overlay:GetFrameLevel() + 3)
+    end
 
     b:HookScript("OnEnter", function(self)
         self.highlight:Show()
@@ -401,6 +409,28 @@ function GT.ApplyLook(b)
         end
     end
 
+    local ka = GT.KeyAuras()
+    local ks = ka.size or 16
+    for i, d in ipairs(b.keyBuffs) do
+        d:SetSize(ks, ks)
+        d:ClearAllPoints()
+        if i == 1 then
+            d:SetPoint("TOPRIGHT", b.health, "RIGHT", -2, ks / 2) -- right side, middle
+        else
+            d:SetPoint("RIGHT", b.keyBuffs[i - 1], "LEFT", -1, 0)
+        end
+    end
+    local kd = math.max(8, math.floor(ks * 0.8 + 0.5))
+    for i, d in ipairs(b.keyDebuffs) do
+        d:SetSize(kd, kd)
+        d:ClearAllPoints()
+        if i == 1 then
+            d:SetPoint("BOTTOMRIGHT", b.health, "BOTTOMRIGHT", -2, 2) -- bottom right corner
+        else
+            d:SetPoint("RIGHT", b.keyDebuffs[i - 1], "LEFT", -1, 0)
+        end
+    end
+
     local size = deb.size
     for i, d in ipairs(b.debuffs) do
         d:SetSize(size, size)
@@ -441,6 +471,7 @@ local function OnUnitEvent(self, event, unit)
     elseif event == "UNIT_AURA" then
         GT.UpdateDebuffs(self)
         GT.UpdateBuffs(self)
+        GT.UpdateKeyAuras(self)
         if not InCombatLockdown() then GT.UpdateStatus(self) end -- started/stopped drinking
     elseif event == "UNIT_THREAT_SITUATION_UPDATE" then
         GT.UpdateAggro(self)
@@ -1201,13 +1232,20 @@ end
 GT.NativeAurasAvailable = NativeAvailable
 function GT.ResetNativeAuras() nativeOK = nil end
 
+local KEY_BUFF_COLOR = { 1.00, 0.82, 0.20 }   -- gold box: a save / shield is on them
+local KEY_DEBUFF_COLOR = { 0.90, 0.15, 0.15 }  -- red box: Forbearance / Weakened Soul
+GT.KEY_BUFF_COLOR, GT.KEY_DEBUFF_COLOR = KEY_BUFF_COLOR, KEY_DEBUFF_COLOR
+
 local function MakeInit(kind)
     return function(button)
         pcall(button.EnableMouse, button, false) -- clicks/mouseover belong to the unit frame
         local border = button:CreateTexture(nil, "BACKGROUND")
         border:SetTexture(FLAT)
         border:SetAllPoints(button)
-        if kind == "dispel" then border:SetVertexColor(0.2, 0.6, 1, 1) else border:SetVertexColor(0, 0, 0, 1) end
+        if kind == "dispel" then border:SetVertexColor(0.2, 0.6, 1, 1)
+        elseif kind == "keybuff" then border:SetVertexColor(KEY_BUFF_COLOR[1], KEY_BUFF_COLOR[2], KEY_BUFF_COLOR[3], 1)
+        elseif kind == "keydebuff" then border:SetVertexColor(KEY_DEBUFF_COLOR[1], KEY_DEBUFF_COLOR[2], KEY_DEBUFF_COLOR[3], 1)
+        else border:SetVertexColor(0, 0, 0, 1) end
         local icon = button:CreateTexture(nil, "ARTWORK")
         icon:SetPoint("TOPLEFT", 1, -1)
         icon:SetPoint("BOTTOMRIGHT", -1, 1)
@@ -1227,10 +1265,10 @@ local function MakeInit(kind)
     end
 end
 
-local function NewBox(b, groups, anchor, x, y, gh, gv)
+local function NewBox(b, groups, anchor, x, y, gh, gv, relPoint)
     local box = CreateFrame("AuraContainer", nil, b.overlay, "CustomAuraContainerTemplate")
     box:SetFrameLevel(b.overlay:GetFrameLevel() + 2)
-    box:SetPoint(anchor, b.health, anchor, x, y)
+    box:SetPoint(anchor, b.health, relPoint or anchor, x, y)
     box:SetSize(1, 1)
     local FD = AnchorUtil.FlowDirection
     local setA = box.SetFlowLayoutAnchorPoint or box.SetAuraLayoutAnchorPoint
@@ -1240,6 +1278,7 @@ local function NewBox(b, groups, anchor, x, y, gh, gv)
     for _, g in ipairs(groups) do
         box:AddAuraGroup(g.key, g.filter, {
             maxFrameCount = g.max,
+            candidateFilters = g.candidateFilters,
             initializeFrame = MakeInit(g.kind),
             layout = { elementWidth = g.size, elementHeight = g.size, elementSpacing = 1, lineSpacing = 1 },
         })
@@ -1366,6 +1405,146 @@ function GT.UpdateBuffs(b)
     end
 end
 
+-------------------------------------------------------------------------------
+-- Shields & saves: BoP, Divine Shield / Protection, Power Word: Shield,
+-- Blessing of Freedom, Blessing of Sacrifice (gold box, right side), and
+-- Forbearance / Weakened Soul (red box, bottom right). Every rank is listed,
+-- plus the modern IDs, so it works whichever spell versions the realm uses.
+-------------------------------------------------------------------------------
+local KEY_BUFF_IDS = {
+    -- Blessing / Hand of Protection, Blessing of Spellwarding
+    [1022] = true, [5599] = true, [10278] = true, [204018] = true,
+    -- Divine Shield (bubble), Divine Protection
+    [642] = true, [1020] = true, [498] = true, [5573] = true,
+    -- Power Word: Shield
+    [17] = true, [592] = true, [600] = true, [3747] = true, [6065] = true, [6066] = true,
+    [10898] = true, [10899] = true, [10900] = true, [10901] = true, [25217] = true, [25218] = true,
+    [48065] = true, [48066] = true,
+    -- Blessing / Hand of Freedom
+    [1044] = true,
+    -- Blessing / Hand of Sacrifice
+    [6940] = true, [20729] = true, [27147] = true, [27148] = true,
+}
+local KEY_DEBUFF_IDS = { [25771] = true, [6788] = true } -- Forbearance, Weakened Soul
+local KEY_BUFF_NAMES = {
+    ["Blessing of Protection"] = true, ["Hand of Protection"] = true, ["Blessing of Spellwarding"] = true,
+    ["Divine Shield"] = true, ["Divine Protection"] = true, ["Power Word: Shield"] = true,
+    ["Blessing of Freedom"] = true, ["Hand of Freedom"] = true,
+    ["Blessing of Sacrifice"] = true, ["Hand of Sacrifice"] = true,
+}
+local KEY_DEBUFF_NAMES = { ["Forbearance"] = true, ["Weakened Soul"] = true }
+
+-- friendly debuffs can only be picked by spell ID natively when the game marks them never-secret
+local keyDebuffsNative
+local function KeyDebuffsNative()
+    if keyDebuffsNative ~= nil then return keyDebuffsNative end
+    keyDebuffsNative = false
+    if C_Secrets and C_Secrets.GetSpellAuraSecrecy and Enum and Enum.SecrecyLevel then
+        local ok1, a = pcall(C_Secrets.GetSpellAuraSecrecy, 25771)
+        local ok2, w = pcall(C_Secrets.GetSpellAuraSecrecy, 6788)
+        keyDebuffsNative = ok1 and ok2 and a == Enum.SecrecyLevel.NeverSecret and w == Enum.SecrecyLevel.NeverSecret
+    end
+    return keyDebuffsNative
+end
+
+local function IsKeyAura(aura, ids, names)
+    local id = aura.spellId
+    if Readable(id) and type(id) == "number" and ids[id] then return true end
+    local n = aura.name
+    if Readable(n) and type(n) == "string" and names[n] then return true end
+    return false
+end
+
+-- Lua path: read the auras ourselves (works whenever the game lets us see them)
+local function LuaKeyAuras(icons, u, filter, ids, names, color)
+    if not (C_UnitAuras and C_UnitAuras.GetAuraSlots and C_UnitAuras.GetAuraDataBySlot) then return end
+    local res = { pcall(C_UnitAuras.GetAuraSlots, u, filter, 40) }
+    if not res[1] then return end
+    local shown = 0
+    for i = 3, #res do
+        if shown >= #icons then break end
+        local ok, aura = pcall(C_UnitAuras.GetAuraDataBySlot, u, res[i])
+        if ok and aura and IsKeyAura(aura, ids, names) then
+            shown = shown + 1
+            local d = icons[shown]
+            if pcall(ShowDebuff, d, u, aura, false) then
+                d.border:SetVertexColor(color[1], color[2], color[3], 1)
+            else
+                d:Hide(); shown = shown - 1
+            end
+        end
+    end
+end
+
+local function KeyBox(b, key, filter, ids, kind, anchor, x, y, relPoint, size)
+    return NewBox(b, { { key = key, filter = filter, max = 3, size = size, kind = kind,
+        candidateFilters = { includeSpellIDs = ids } } }, anchor, x, y, "Left", "Up", relPoint)
+end
+
+function GT.UpdateKeyAuras(b)
+    if not b.keyBuffs then return end
+    for _, d in ipairs(b.keyBuffs) do d:Hide() end
+    for _, d in ipairs(b.keyDebuffs) do d:Hide() end
+    local cfg = GT.KeyAuras()
+    local u = b.unit
+    local on = cfg.enabled ~= false and b.kind ~= "target"
+    local debOn = on and cfg.debuffs ~= false
+    local ks = cfg.size or 16
+    local kd = math.max(8, math.floor(ks * 0.8 + 0.5))
+
+    if b.kind == "fake" or b.isPreview then
+        if on and b.fakeKeyBuffs then
+            for i = 1, math.min(#b.fakeKeyBuffs, 3) do
+                local d = b.keyBuffs[i]
+                d.icon:SetTexture(b.fakeKeyBuffs[i]); d.count:SetText(""); d.cd:Hide()
+                d.border:SetVertexColor(KEY_BUFF_COLOR[1], KEY_BUFF_COLOR[2], KEY_BUFF_COLOR[3], 1); d:Show()
+            end
+        end
+        if debOn and b.fakeKeyDebuffs then
+            for i = 1, math.min(#b.fakeKeyDebuffs, 3) do
+                local d = b.keyDebuffs[i]
+                d.icon:SetTexture(b.fakeKeyDebuffs[i]); d.count:SetText(""); d.cd:Hide()
+                d.border:SetVertexColor(KEY_DEBUFF_COLOR[1], KEY_DEBUFF_COLOR[2], KEY_DEBUFF_COLOR[3], 1); d:Show()
+            end
+        end
+        return
+    end
+
+    local native = NativeAvailable()
+    -- saves / shields: native box picks them by spell ID (allowed for buffs on group members)
+    local sig = table.concat({ tostring(on), ks }, ":")
+    if native and b.gfKeySig ~= sig then
+        if b.gfKeyBox then b.gfKeyBox:Hide(); pcall(b.gfKeyBox.SetUnit, b.gfKeyBox, nil) end
+        b.gfKeyBox, b.gfKeySig = nil, sig
+        if on then
+            local ok, box = pcall(KeyBox, b, "keybuffs", "HELPFUL", KEY_BUFF_IDS, "keybuff", "TOPRIGHT", -2, ks / 2, "RIGHT", ks)
+            if ok then b.gfKeyBox = box end
+        end
+    end
+    if native and b.gfKeyBox then
+        if u and on then BindBox(b.gfKeyBox, u) else b.gfKeyBox:Hide() end
+    elseif on and u then
+        LuaKeyAuras(b.keyBuffs, u, "HELPFUL", KEY_BUFF_IDS, KEY_BUFF_NAMES, KEY_BUFF_COLOR)
+    end
+
+    -- Forbearance / Weakened Soul
+    local dnative = native and KeyDebuffsNative()
+    local dsig = table.concat({ tostring(debOn), kd }, ":")
+    if dnative and b.gfKeyDebSig ~= dsig then
+        if b.gfKeyDebBox then b.gfKeyDebBox:Hide(); pcall(b.gfKeyDebBox.SetUnit, b.gfKeyDebBox, nil) end
+        b.gfKeyDebBox, b.gfKeyDebSig = nil, dsig
+        if debOn then
+            local ok, box = pcall(KeyBox, b, "keydebuffs", "HARMFUL", KEY_DEBUFF_IDS, "keydebuff", "BOTTOMRIGHT", -2, 2, nil, kd)
+            if ok then b.gfKeyDebBox = box end
+        end
+    end
+    if dnative and b.gfKeyDebBox then
+        if u and debOn then BindBox(b.gfKeyDebBox, u) else b.gfKeyDebBox:Hide() end
+    elseif debOn and u then
+        LuaKeyAuras(b.keyDebuffs, u, "HARMFUL", KEY_DEBUFF_IDS, KEY_DEBUFF_NAMES, KEY_DEBUFF_COLOR)
+    end
+end
+
 -- Range fade. UnitInRange can return secret booleans in restricted areas;
 -- SetAlphaFromBoolean lets the client resolve those for us.
 -- inRange: true / false, or a hidden (secret) boolean the client resolves for us.
@@ -1468,6 +1647,7 @@ function GT.UpdateAll(b)
     GT.UpdateAggro(b)
     GT.UpdateDebuffs(b)
     GT.UpdateBuffs(b)
+    GT.UpdateKeyAuras(b)
     GT.UpdateLeader(b)
     GT.UpdateRange(b)
 end

@@ -106,6 +106,12 @@ local function FrameSections(kind)
             { "slider", "Debuff Size", "layout.debuffs.size", 8, 30, 1 },
             { "slider", "Max Debuffs", "layout.debuffs.max", 1, 6, 1 },
         } },
+        { title = "Shields & Saves", rows = {
+            { "toggle", "Show Shields & Saves", "layout.keyAuras.enabled" },
+            { "toggle", "Show Forbearance & Weakened Soul", "layout.keyAuras.debuffs", cond = function() return GT.Get("layout.keyAuras.enabled") ~= false end },
+            { "slider", "Icon Size", "layout.keyAuras.size", 8, 30, 1 },
+            { "info", "", "Gold box on the right: Blessing of Protection, Divine Shield, Power Word: Shield, Blessing of Freedom, Blessing of Sacrifice. Red box in the corner: Forbearance and Weakened Soul.", full = true },
+        } },
         { title = "Out of Range", rows = {
             { "dropdown", "Style", "layout.look.rangeStyle", { { "BOX", "Grey out the whole box" }, { "FADE", "Fade the frame" } } },
             { "swatch", "Box Color", "layout.look.oorColor", cond = function() return GT.Get("layout.look.rangeStyle") ~= "FADE" end },

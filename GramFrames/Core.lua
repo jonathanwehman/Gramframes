@@ -3,7 +3,7 @@
 local ADDON, GT = ...
 _G.GramFrames = GT
 
-GT.version = "2.2.18"
+GT.version = "2.3.0"
 GT.media = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
 GT.FLAT = "Interface\\Buttons\\WHITE8X8"
 GT.FONT = "Fonts\\ARIALN.TTF" -- fallback; the chosen font comes from GT.GetFont()
@@ -269,6 +269,13 @@ local VIEW_DEFAULTS = {
         dispelBar = true,           -- health bar turns purple (curse), green (poison)...
         dispelMine = true,          -- only for debuffs you can remove
     },
+    -- shields & saves: BoP, bubble, Power Word: Shield, Freedom, Sacrifice (right side, middle)
+    -- plus Forbearance / Weakened Soul (bottom right corner)
+    keyAuras = {
+        enabled = true,
+        size = 16,
+        debuffs = true,             -- Forbearance + Weakened Soul
+    },
 }
 
 local function LayoutDefaults(x, y, scale)
@@ -283,6 +290,7 @@ local function LayoutDefaults(x, y, scale)
         scale = scale or 1,
         pos = { "CENTER", "UIParent", "CENTER", x or -360, y or 60 },
         look = VIEW_DEFAULTS.look, buffs = VIEW_DEFAULTS.buffs, debuffs = VIEW_DEFAULTS.debuffs,
+        keyAuras = VIEW_DEFAULTS.keyAuras,
     }
 end
 -- party starts roomier than raid: bigger frames, power bars on, bigger auras
@@ -291,6 +299,7 @@ local PARTY_STYLE = {
     look = { powerBar = "ALL", powerHeight = 4, nameSize = 13 },
     buffs = { size = 16 },
     debuffs = { size = 20 },
+    keyAuras = { size = 18 },
 }
 local function Copy(t)
     local o = {}
@@ -300,6 +309,7 @@ end
 local function PartyDefaults()
     local L = LayoutDefaults(-480, -40) -- party sits somewhere other than raid by default
     L.look, L.buffs, L.debuffs = Copy(VIEW_DEFAULTS.look), Copy(VIEW_DEFAULTS.buffs), Copy(VIEW_DEFAULTS.debuffs)
+    L.keyAuras = Copy(VIEW_DEFAULTS.keyAuras)
     L.showPlayer = false -- party frames show your groupmates, not you
     for k, v in pairs(PARTY_STYLE) do
         if type(v) == "table" then for k2, v2 in pairs(v) do L[k][k2] = v2 end else L[k] = v end
@@ -514,6 +524,7 @@ local lookProxy = setmetatable({}, {
 function GT.Look() return lookProxy end
 function GT.Buffs() return View().buffs end
 function GT.Debuffs() return View().debuffs end
+function GT.KeyAuras() return View().keyAuras or VIEW_DEFAULTS.keyAuras end
 
 -- which layout fits the current group
 function GT.ActiveLayoutKey()

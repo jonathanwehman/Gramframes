@@ -426,6 +426,19 @@ local function FillFake(b, i)
             ic.count:SetText(""); ic.cd:Hide(); ic:Show()
         end
     end
+    -- preview: shields & saves (gold) and Forbearance / Weakened Soul (red)
+    local KEY = {
+        [1] = { { "Interface\\Icons\\Spell_Holy_SealOfProtection" }, { "Interface\\Icons\\Spell_Holy_RemoveCurse" } },      -- BoP + Forbearance
+        [3] = { { "Interface\\Icons\\Spell_Holy_PowerWordShield" }, { "Interface\\Icons\\Spell_Holy_AshesToAshes" } },     -- PW:S + Weakened Soul
+        [6] = { { "Interface\\Icons\\Spell_Holy_SealOfValor" } },                                                     -- Freedom
+        [8] = { { "Interface\\Icons\\Spell_Holy_SealOfSacrifice" } },                                                 -- Sacrifice
+        [7] = { { "Interface\\Icons\\Spell_Holy_DivineIntervention" }, { "Interface\\Icons\\Spell_Holy_RemoveCurse" } }, -- bubble + Forbearance
+    }
+    local key = KEY[slot]
+    b.isPreview = true
+    b.fakeKeyBuffs = key and key[1] or nil
+    b.fakeKeyDebuffs = key and key[2] or nil
+    GT.UpdateKeyAuras(b)
     local tc = GT.Look().targetColor or { 1, 0.82, 0.2 }
     b.targetBorder:SetColor(tc[1], tc[2], tc[3], 1)
     b.targetBorder:SetShown(GT.Look().targetHighlight and i == 4)

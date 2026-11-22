@@ -1,5 +1,11 @@
 # Gram Frames changelog
 
+## 2.3.0
+- **Shields & saves** on every frame. A gold box on the right side shows **Blessing of Protection**, **Divine Shield / Divine Protection** (bubble), **Power Word: Shield**, **Blessing of Freedom** and **Blessing of Sacrifice**, with a timer swipe.
+- A red box in the bottom-right corner shows **Forbearance** and **Weakened Soul**, so you know who can't get bubbled/BoP'd or shielded again yet.
+- New **Shields & Saves** section on the Party and Raid pages: turn it on or off, hide Forbearance / Weakened Soul, and change the icon size.
+- Test mode shows them on a few frames.
+
 ## 2.2.18
 - Click-casting has a new modifier: **Ctrl + Alt + Shift**. Handy for menus or extra binds while keeping plain left and right click free for heals.
 
